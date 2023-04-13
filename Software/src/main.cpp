@@ -1,11 +1,10 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
+#include <iostream>
 #include "draw.h"
 #include "classes.h"
-
-#define WIDTH 1024
-#define HEIGHT 1024
-
+#include "defs.h"
+#include "utils.h"
 
 int main(int argc, char *argv[]) {
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -28,7 +27,20 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  Robot *mouse = new Robot(992, 992, 0, -1, 20);
+  //SDL wants to have width before height. So to stay consistent it's like this everywhere.
+  Robot mouse = Robot((LABYRINTH_WIDTH*CELL_SIZE)-(CELL_SIZE/2), (LABYRINTH_HEIGHT*CELL_SIZE)-(CELL_SIZE/2),
+                            0, -1, DISTANCE_WHEELS, MOUSE_WIDTH, MOUSE_HEIGHT);
+  Sensor sensor1 = Sensor(mouse, M_PI/2, mouse.height/2);
+  Sensor sensor2 = Sensor(mouse, M_PI/4, mouse.height/2);
+  Sensor sensor3 = Sensor(mouse, 0.0, mouse.height/2);
+  Sensor sensor4 = Sensor(mouse, -M_PI/4, mouse.height/2);
+  Sensor sensor5 = Sensor(mouse, -M_PI/2, mouse.height/2);
+  Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT];
+  for (int i=0; i<LABYRINTH_WIDTH; i++){
+    for (int j=0; j<LABYRINTH_HEIGHT; j++){
+      labyrinth[i][j].initialize(i, j);
+    }
+  }
 
   bool running = true;
   while (running) {
@@ -42,11 +54,30 @@ int main(int argc, char *argv[]) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear(renderer);
 
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
-    drawSquareGrid(renderer, 16);
+    //SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
+    //drawSquareGrid(renderer, 16);
 
-    drawRobo(renderer, *mouse);
-    mouse->updatePosition(1.0, 1.0);
+    drawRobo(renderer, mouse);
+    /*
+      drawSensor(renderer, sensor1);
+      drawSensor(renderer, sensor2);
+      drawSensor(renderer, sensor3);
+      drawSensor(renderer, sensor4);
+      drawSensor(renderer, sensor5);
+    */
+
+    drawLabyrinth(renderer, labyrinth);
+    mouse.updatePosition(renderer, -1, 1);
+    sensor1.updatePosition(mouse);
+    sensor2.updatePosition(mouse);
+    sensor3.updatePosition(mouse);
+    sensor4.updatePosition(mouse);
+    sensor5.updatePosition(mouse);
+    sensor1.getDistance(labyrinth);
+    sensor2.getDistance(labyrinth);
+    sensor3.getDistance(labyrinth);
+    sensor4.getDistance(labyrinth);
+    sensor5.getDistance(labyrinth);
 
     SDL_RenderPresent(renderer);
   }
