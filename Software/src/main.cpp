@@ -58,26 +58,26 @@ int main(int argc, char *argv[]) {
     //drawSquareGrid(renderer, 16);
 
     drawRobo(renderer, mouse);
-    /*
-      drawSensor(renderer, sensor1);
-      drawSensor(renderer, sensor2);
-      drawSensor(renderer, sensor3);
-      drawSensor(renderer, sensor4);
-      drawSensor(renderer, sensor5);
-    */
+    
+    drawSensor(renderer, mouse, sensor1);
+    drawSensor(renderer, mouse, sensor2);
+    drawSensor(renderer, mouse, sensor3);
+    drawSensor(renderer, mouse, sensor4);
+    drawSensor(renderer, mouse, sensor5);
+    
 
     drawLabyrinth(renderer, labyrinth);
-    mouse.updatePosition(renderer, -1, 1);
+    mouse.updatePosition(0.1, 0.2);
     sensor1.updatePosition(mouse);
     sensor2.updatePosition(mouse);
     sensor3.updatePosition(mouse);
     sensor4.updatePosition(mouse);
     sensor5.updatePosition(mouse);
-    sensor1.getDistance(labyrinth);
-    sensor2.getDistance(labyrinth);
-    sensor3.getDistance(labyrinth);
-    sensor4.getDistance(labyrinth);
-    sensor5.getDistance(labyrinth);
+    // sensor1.getDistance(mouse, labyrinth);
+    // sensor2.getDistance(mouse, labyrinth);
+    // sensor3.getDistance(mouse, labyrinth);
+    // sensor4.getDistance(mouse, labyrinth);
+    // sensor5.getDistance(mouse, labyrinth);
 
     SDL_RenderPresent(renderer);
   }

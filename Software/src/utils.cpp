@@ -50,18 +50,15 @@ bool doIntersect(std::vector<float> l1p1, std::vector<float> l1p2, std::vector<f
     d2 = crossProduct(l2p1, l2p2, l1p2);
     d3 = crossProduct(l1p1, l1p2, l2p1);
     d4 = crossProduct(l1p1, l1p2, l2p2);
-    //std::cout << d1 <<  std::endl;
-    //std::cout << (d1 > 0 && d2 < 0) << "   " << (d1 < 0 && d2 > 0) << "   " << (d3 > 0 && d4 < 0) << "   " << (d3 < 0 && d4 > 0) << std::endl;
     if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
         ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
         intersection = intersectionPoint(l1p1, l1p2, l2p1, l2p2);
-        std::cout << "here!!!" << std::endl;
-        std::cout << intersection[0] << "   ";
-        std::cout << intersection[1] << std::endl;
-        distance = sqrt(pow(l1p1[0]-intersection[0], 2) + pow(l1p1[1]-intersection[2], 2));
-        return distance;
+        // Calculate the distance between the intersection point and the first endpoint of the first line segment
+        distance = sqrt(pow(l1p1[0]-intersection[0], 2) + pow(l1p1[1]-intersection[1], 2));
+        // Return true if the distance is not zero (i.e. the intersection is not at an endpoint)
+        return distance > 0;
     }
-    return INFINITY;
+    return false;
 }
 
 std::vector<float> intersectionPoint(std::vector<float> l1p1, std::vector<float> l1p2, std::vector<float> l2p1, std::vector<float> l2p2) {

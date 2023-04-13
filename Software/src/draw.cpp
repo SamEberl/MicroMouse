@@ -54,8 +54,8 @@ void drawRotatedSquare(SDL_Renderer *renderer, float x, float y, float direction
 void drawRobo(SDL_Renderer *renderer, Robot mouse){
     float x = mouse.position[0];
     float y = mouse.position[1];
-    float x_dir = mouse.direction[0];
-    float y_dir = mouse.direction[1];
+    float x_dir = cos(mouse.direction);
+    float y_dir = sin(mouse.direction);
     float width = mouse.width;
     float height = mouse.height;
     SDL_SetRenderDrawColor(renderer, 55, 55, 55, SDL_ALPHA_OPAQUE);
@@ -64,13 +64,13 @@ void drawRobo(SDL_Renderer *renderer, Robot mouse){
     SDL_RenderDrawLine(renderer, x, y, x+x_dir*width/2, y+y_dir*height/2);
 }
 
-void drawSensor(SDL_Renderer *renderer, Sensor sensor){
+void drawSensor(SDL_Renderer *renderer, Robot mouse, Sensor sensor){
     float x = sensor.position[0];
     float y = sensor.position[1];
-    float x_dir = sensor.direction[0];
-    float y_dir = sensor.direction[1];
     SDL_SetRenderDrawColor(renderer, 50, 255, 50, SDL_ALPHA_OPAQUE);
-    SDL_RenderDrawLine(renderer, x, y, x+x_dir*sensor.dist_measure, y+y_dir*sensor.dist_measure);
+    SDL_RenderDrawLine(renderer, x, y,
+                        x + cos(mouse.direction + sensor.offset_direction)*sensor.dist_measure, 
+                        y + sin(mouse.direction + sensor.offset_direction)*sensor.dist_measure);
 }
 
 
