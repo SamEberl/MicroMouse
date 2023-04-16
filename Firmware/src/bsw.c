@@ -13,7 +13,7 @@
 void bsw_init(void) {
     setupIO(); //configures inputs and outputs
     initTimer1(10.0);
-    uartTp_init();
+    //uartTp_init();
     setupI2C();
     startI2C();
     SEN1 = SENOFF;
@@ -36,7 +36,7 @@ void bsw_init(void) {
     //initPWM1(1000);
     //motor_init();
     
-    diag_init();
+    //diag_init();
 }
 
 void init_end(void) {
@@ -46,7 +46,7 @@ void init_end(void) {
 void bsw_10ms(void) {
     IO_10ms();
     //motor_10ms();
-    uartTp_10ms();
+    //uartTp_10ms();
     I2CTp_10ms();
-    diag_10ms();
+    //diag_10ms();
 }
