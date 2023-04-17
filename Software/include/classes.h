@@ -83,7 +83,6 @@ class Sensor {
 
         Sensor(Robot mouse, float offset_direction_, float offset_position_);
         void updatePosition(Robot mouse);
-        void getDistance(Robot mouse, Cell[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]);
         void getDistanceToWall(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]);
 };
 

@@ -41,7 +41,6 @@ void Cell::initialize(float row_, float col_) {
     col = col_;
     float x_pos = col * CELL_SIZE;
     float y_pos = row * CELL_SIZE;
-    p1.resize(2); p2.resize(2); p3.resize(2); p4.resize(2);
     // Points start in top left corner of cell and go clockwise
     this->p1 = {x_pos, y_pos};
     this->p2 = {(x_pos+CELL_SIZE), y_pos};
@@ -202,57 +201,3 @@ void Sensor::getDistanceToWall(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_
     }
     dist_measure = shortest_dist_measure;
 }
-
-
-
-/*
-    Wall north = Wall(p1, p2);
-    Wall east = Wall(p2, p4);
-    Wall south = Wall(p3, p4);
-    Wall west = Wall(p1, p3);
-
-
-Wall::Wall(std::vector<float> start_, std::vector<float> end_) {
-    seen = true;
-    exists = true;
-    start = start_;
-    end = end_; 
-}
-*/
-
-
-
-
-
-/*
-void Cell::updateWall(char wall_direction, bool wall_exists){
-    switch(wall_direction){
-        case 'n':
-            north_seen = true;
-            north_exists = wall_exists;
-            break;
-
-        case 'e':
-            north_seen = true;
-            north_exists = wall_exists;
-            break;
-
-        case 's':
-            north_seen = true;
-            north_exists = wall_exists;
-            break;
-
-        case 'w':
-            north_seen = true;
-            north_exists = wall_exists;
-            break;
-
-        default:
-            printf("Error! Passed parameter 'wall_direction' incorrect.");
-    }
-}
-*/
-
-
-
-

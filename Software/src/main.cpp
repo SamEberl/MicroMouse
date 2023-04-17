@@ -38,7 +38,6 @@ int main(int argc, char *argv[]) {
   Sensor sensor4 = Sensor(mouse, -M_PI/4, mouse.height/2);
   Sensor sensor5 = Sensor(mouse, -M_PI/2, mouse.height/2);
 
-  // vector<vector<Cell>> labyrinth(LABYRINTH_WIDTH, vector<Cell>(LABYRINTH_HEIGHT, Cell(0, 0)));
   Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT];
   for (int i = 0; i < LABYRINTH_WIDTH; i++) {
       for (int j = 0; j < LABYRINTH_HEIGHT; j++) {
@@ -60,32 +59,29 @@ int main(int argc, char *argv[]) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear(renderer);
 
-    //SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
-    //drawSquareGrid(renderer, 16);
-
     drawRobo(renderer, mouse);
     
-    // drawSensor(renderer, mouse, sensor1);
-    // drawSensor(renderer, mouse, sensor2);
-    // drawSensor(renderer, mouse, sensor3);
-    // drawSensor(renderer, mouse, sensor4);
+    drawSensor(renderer, mouse, sensor1);
+    drawSensor(renderer, mouse, sensor2);
+    drawSensor(renderer, mouse, sensor3);
+    drawSensor(renderer, mouse, sensor4);
     drawSensor(renderer, mouse, sensor5);
     
 
     drawLabyrinth(renderer, labyrinth);
     mouse.updatePosition(0.3, 0.31);
+    
     sensor1.updatePosition(mouse);
     sensor2.updatePosition(mouse);
     sensor3.updatePosition(mouse);
     sensor4.updatePosition(mouse);
     sensor5.updatePosition(mouse);
-    // sensor1.getDistanceToWall(labyrinth);
-    // sensor2.getDistanceToWall(labyrinth);
-    // sensor3.getDistanceToWall(labyrinth);
-    // sensor4.getDistanceToWall(labyrinth);
-    sensor5.getDistanceToWall(renderer, labyrinth);
-    cout << "intersectionDistMeasure:  " << sensor5.dist_measure << ", " << " " << endl;
 
+    sensor1.getDistanceToWall(renderer, labyrinth);
+    sensor2.getDistanceToWall(renderer, labyrinth);
+    sensor3.getDistanceToWall(renderer, labyrinth);
+    sensor4.getDistanceToWall(renderer, labyrinth);
+    sensor5.getDistanceToWall(renderer, labyrinth);
 
     SDL_RenderPresent(renderer);
   }
