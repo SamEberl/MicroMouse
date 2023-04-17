@@ -5,6 +5,8 @@
 #include "classes.h"
 #include "defs.h"
 
+using namespace std;
+
 void drawSquareGrid(SDL_Renderer *renderer, int sideLength)
 {
     // Set the color for the grid cell
@@ -69,59 +71,45 @@ void drawSensor(SDL_Renderer *renderer, Robot mouse, Sensor sensor){
     float y = sensor.position[1];
     SDL_SetRenderDrawColor(renderer, 50, 255, 50, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawLine(renderer, x, y,
-                        x + cos(mouse.direction + sensor.offset_direction)*sensor.dist_measure, 
-                        y + sin(mouse.direction + sensor.offset_direction)*sensor.dist_measure);
+                        x + cos(sensor.direction)*sensor.dist_measure, 
+                        y + sin(sensor.direction)*sensor.dist_measure);
 }
 
 
+
 void drawLabyrinth(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]){
-    std::vector<float> p1(2), p2(2), p3(2), p4(2);
+    vector<float> p1(2), p2(2), p3(2), p4(2);
 
     for (int i = 0; i < LABYRINTH_WIDTH; i += 1)
     {
         for (int j = 0; j < LABYRINTH_HEIGHT; j += 1){
-            p1 = labyrinth[i][j].p1;
-            p2 = labyrinth[i][j].p2;
-            p3 = labyrinth[i][j].p3;
-            p4 = labyrinth[i][j].p4;
+            p1 = labyrinth[i][j].get_point('1');
+            p2 = labyrinth[i][j].get_point('2');
+            p3 = labyrinth[i][j].get_point('3');
+            p4 = labyrinth[i][j].get_point('4');
 
             //draw north
-            if (!labyrinth[i][j].north_seen){
+            if (labyrinth[i][j].has_wall('N')){
                 SDL_SetRenderDrawColor(renderer, 200, 200, 255, 128);
-                SDL_RenderDrawLine(renderer, p1[0]*CELL_SIZE, p1[1]*CELL_SIZE, p2[0]*CELL_SIZE, p2[1]*CELL_SIZE);
-            } else if (labyrinth[i][j].north_exists){
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-                SDL_RenderDrawLine(renderer, p1[0]*CELL_SIZE, p1[1]*CELL_SIZE, p2[0]*CELL_SIZE, p2[1]*CELL_SIZE);
+                SDL_RenderDrawLine(renderer, p1[0], p1[1], p2[0], p2[1]);
             }
             
-
             //draw east
-            if (!labyrinth[i][j].east_seen){
+            if (labyrinth[i][j].has_wall('E')){
                 SDL_SetRenderDrawColor(renderer, 200, 200, 255, 128);
-                SDL_RenderDrawLine(renderer, p2[0]*CELL_SIZE, p2[1]*CELL_SIZE, p3[0]*CELL_SIZE, p3[1]*CELL_SIZE);
-            } else if (labyrinth[i][j].east_exists){
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-                SDL_RenderDrawLine(renderer, p2[0]*CELL_SIZE, p2[1]*CELL_SIZE, p3[0]*CELL_SIZE, p3[1]*CELL_SIZE);
+                SDL_RenderDrawLine(renderer, p2[0], p2[1], p3[0], p3[1]);
             }
             
-
             //draw south
-            if (!labyrinth[i][j].south_seen){
+            if (labyrinth[i][j].has_wall('S')){
                 SDL_SetRenderDrawColor(renderer, 200, 200, 255, 128);
-                SDL_RenderDrawLine(renderer, p4[0]*CELL_SIZE, p4[1]*CELL_SIZE, p3[0]*CELL_SIZE, p3[1]*CELL_SIZE);
-            } else if (labyrinth[i][j].south_exists){
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-                SDL_RenderDrawLine(renderer, p4[0]*CELL_SIZE, p4[1]*CELL_SIZE, p3[0]*CELL_SIZE, p3[1]*CELL_SIZE);
+                SDL_RenderDrawLine(renderer, p4[0], p4[1], p3[0], p3[1]);
             }
             
-
             //draw west
-            if (!labyrinth[i][j].west_seen){
+            if (labyrinth[i][j].has_wall('W')){
                 SDL_SetRenderDrawColor(renderer, 200, 200, 255, 128);
-                SDL_RenderDrawLine(renderer, p1[0]*CELL_SIZE, p1[1]*CELL_SIZE, p4[0]*CELL_SIZE, p4[1]*CELL_SIZE);
-            } else if (labyrinth[i][j].west_exists){
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-                SDL_RenderDrawLine(renderer, p1[0]*CELL_SIZE, p1[1]*CELL_SIZE, p4[0]*CELL_SIZE, p4[1]*CELL_SIZE);
+                SDL_RenderDrawLine(renderer, p1[0], p1[1], p4[0], p4[1]);
             }
         }
     }

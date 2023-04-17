@@ -5,6 +5,8 @@
 #ifndef DRAW_H
 #define DRAW_H
 
+using namespace std;
+
 void drawSquareGrid(SDL_Renderer *renderer, int sideLength);
 void drawCircle(SDL_Renderer *renderer, int x, int y, int radius);
 void drawSquare(SDL_Renderer *renderer, int x, int y, int w, int h);

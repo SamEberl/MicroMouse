@@ -35,76 +35,164 @@ void Robot::updatePosition(float speedLeft, float speedRight) {
     position[1] += speed * sin(direction) * deltaTime;
 }
 
-
-Cell::Cell(){
-    north_seen = true;
-    north_exists = true;
-    east_seen = true;
-    east_exists = true;
-    south_seen = true;
-    south_exists = true;
-    west_seen = true;
-    west_exists = true;
-}
-
-void Cell::initialize(float x_id, float y_id) {
+Cell::Cell() : N(true), E(true), S(true), W(true), visited(false) {}
+void Cell::initialize(float row_, float col_) {
+    row = row_;
+    col = col_;
+    float x_pos = col * CELL_SIZE;
+    float y_pos = row * CELL_SIZE;
+    p1.resize(2); p2.resize(2); p3.resize(2); p4.resize(2);
     // Points start in top left corner of cell and go clockwise
-    this->p1 = {x_id, y_id};
-    this->p2 = {(x_id+1), y_id};
-    this->p3 = {(x_id+1), (y_id+1)};
-    this->p4 = {x_id, (y_id+1)};
+    this->p1 = {x_pos, y_pos};
+    this->p2 = {(x_pos+CELL_SIZE), y_pos};
+    this->p3 = {(x_pos+CELL_SIZE), (y_pos+CELL_SIZE)};
+    this->p4 = {x_pos, (y_pos+CELL_SIZE)};
 }
+int Cell::get_row() const {return row;};
+int Cell::get_col() const {return col;};
+
+vector<float> Cell::get_point(char pointNumber) const {
+    switch (pointNumber) {
+        case '1':
+            return p1;
+        case '2':
+            return p2;
+        case '3':
+            return p3;
+        case '4':
+            return p4;
+        default:
+            throw invalid_argument("Invalid point number");
+    }
+}
+
+bool Cell::has_wall(char direction) const {
+    switch (direction) {
+        case 'N':
+            return N;
+        case 'E':
+            return E;
+        case 'S':
+            return S;
+        case 'W':
+            return W;
+        default:
+            return true;
+    }
+}
+
+void Cell::remove_wall(char direction) {
+    switch (direction) {
+        case 'N':
+            N = false;
+            break;
+        case 'E':
+            E = false;
+            break;
+        case 'S':
+            S = false;
+            break;
+        case 'W':
+            W = false;
+            break;
+    }
+}
+
+bool Cell::is_visited() const {return visited;}
+
+void Cell::set_visited(bool value) {visited = value;}
 
 
 Sensor::Sensor(Robot mouse, float offset_direction_, float offset_position_) {
-    position.resize(2);
-    offset_direction = offset_direction_;
-    offset_position = offset_position_;
     dist_measure = SENSOR_RANGE;
-    position[0] = mouse.position[0] + cos(mouse.direction + offset_direction)*offset_position;
-    position[1] = mouse.position[1] + sin(mouse.direction + offset_direction)*offset_position;
+
+    offset_direction = offset_direction_;
+    direction = mouse.direction + offset_direction;
+
+    position.resize(2);
+    offset_position = offset_position_;
+    position[0] = mouse.position[0] + cos(direction)*offset_position;
+    position[1] = mouse.position[1] + sin(direction)*offset_position;
+
+
 }
 
 void Sensor::updatePosition(Robot mouse) {
-    position[0] = mouse.position[0] + cos(mouse.direction + offset_direction)*this->offset_position;
-    position[1] = mouse.position[1] + sin(mouse.direction + offset_direction)*this->offset_position;
+    direction = mouse.direction + offset_direction;
+
+    position[0] = mouse.position[0] + cos(direction)*this->offset_position;
+    position[1] = mouse.position[1] + sin(direction)*this->offset_position;
 }
 
-void Sensor::getDistance(Robot mouse, Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
+void Sensor::getDistanceToWall(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
     float shortest_dist_measure = SENSOR_RANGE;
     float temp_dist_measure = SENSOR_RANGE;
-    std::vector<float> end_sensor = {0, 0};
+    bool intersection_found = false;
+    vector<float> intersection = {-1.0, -1.0};
+    vector<float> end_sensor = {position[0] + cos(direction) * SENSOR_RANGE, position[1] + sin(direction) * SENSOR_RANGE};
+    vector<float> wall_start;
+    vector<float> wall_end;
     for (int i = 0; i < LABYRINTH_WIDTH; i += 1){
         for (int j = 0; j < LABYRINTH_HEIGHT; j += 1){
-            end_sensor[0] = position[0] + cos(mouse.direction + offset_direction)*SENSOR_RANGE;
-            end_sensor[1] = position[1] + sin(mouse.direction + offset_direction)*SENSOR_RANGE;
-            if (labyrinth[i][j].north_seen){
-                if (labyrinth[i][j].north_exists){
-                    temp_dist_measure = doIntersect(position, end_sensor, labyrinth[i][j].p1, labyrinth[i][j].p2);
+            if (labyrinth[i][j].has_wall('N')){
+                wall_start = labyrinth[i][j].get_point('1');
+                wall_end = labyrinth[i][j].get_point('2');
+                intersection = findIntersection(renderer,
+                                                position, 
+                                                end_sensor, 
+                                                wall_start, 
+                                                wall_end, 
+                                                temp_dist_measure, 
+                                                intersection_found);
+                if (intersection_found){
                     if (shortest_dist_measure > temp_dist_measure) {
                         shortest_dist_measure = temp_dist_measure;
                     }
                 }
             }
-            if (labyrinth[i][j].east_seen){
-                if (labyrinth[i][j].east_exists){
-                    temp_dist_measure = doIntersect(position, end_sensor, labyrinth[i][j].p2, labyrinth[i][j].p3);
+            if (labyrinth[i][j].has_wall('E')){
+                wall_start = labyrinth[i][j].get_point('2');
+                wall_end = labyrinth[i][j].get_point('3');
+                intersection = findIntersection(renderer,
+                                                position, 
+                                                end_sensor, 
+                                                wall_start, 
+                                                wall_end, 
+                                                temp_dist_measure, 
+                                                intersection_found);
+                if (intersection_found){
                     if (shortest_dist_measure > temp_dist_measure) {
                         shortest_dist_measure = temp_dist_measure;
                     }
                 }
             }
-            if (labyrinth[i][j].south_seen){
-                if (labyrinth[i][j].south_exists){
-                    temp_dist_measure = doIntersect(position, end_sensor, labyrinth[i][j].p3, labyrinth[i][j].p4);
+            if (labyrinth[i][j].has_wall('S')){
+                wall_start = labyrinth[i][j].get_point('3');
+                wall_end = labyrinth[i][j].get_point('4');
+                intersection = findIntersection(renderer,
+                                                position, 
+                                                end_sensor, 
+                                                wall_start, 
+                                                wall_end, 
+                                                temp_dist_measure, 
+                                                intersection_found);
+                if (intersection_found){
                     if (shortest_dist_measure > temp_dist_measure) {
                         shortest_dist_measure = temp_dist_measure;
-                    } 
+                    }
                 }
             }
-            if (labyrinth[i][j].west_seen){
-                if (labyrinth[i][j].west_exists){
-                    temp_dist_measure = doIntersect(position, end_sensor, labyrinth[i][j].p4, labyrinth[i][j].p1);
+            if (labyrinth[i][j].has_wall('W')){
+                wall_start = labyrinth[i][j].get_point('4');
+                wall_end = labyrinth[i][j].get_point('1');
+                intersection = findIntersection(renderer,
+                                                position, 
+                                                end_sensor, 
+                                                wall_start, 
+                                                wall_end, 
+                                                temp_dist_measure, 
+                                                intersection_found);
+                if (intersection_found){
                     if (shortest_dist_measure > temp_dist_measure) {
                         shortest_dist_measure = temp_dist_measure;
                     }
@@ -114,6 +202,7 @@ void Sensor::getDistance(Robot mouse, Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_
     }
     dist_measure = shortest_dist_measure;
 }
+
 
 
 /*

@@ -6,6 +6,8 @@
 #include "defs.h"
 #include "utils.h"
 
+using namespace std;
+
 int main(int argc, char *argv[]) {
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
     SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
@@ -35,12 +37,16 @@ int main(int argc, char *argv[]) {
   Sensor sensor3 = Sensor(mouse, 0.0, mouse.height/2);
   Sensor sensor4 = Sensor(mouse, -M_PI/4, mouse.height/2);
   Sensor sensor5 = Sensor(mouse, -M_PI/2, mouse.height/2);
+
+  // vector<vector<Cell>> labyrinth(LABYRINTH_WIDTH, vector<Cell>(LABYRINTH_HEIGHT, Cell(0, 0)));
   Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT];
-  for (int i=0; i<LABYRINTH_WIDTH; i++){
-    for (int j=0; j<LABYRINTH_HEIGHT; j++){
-      labyrinth[i][j].initialize(i, j);
-    }
+  for (int i = 0; i < LABYRINTH_WIDTH; i++) {
+      for (int j = 0; j < LABYRINTH_HEIGHT; j++) {
+          labyrinth[i][j].initialize(i, j);
+      }
   }
+  generate_labyrinth(labyrinth);
+  print_labyrinth(labyrinth);
 
   bool running = true;
   while (running) {
@@ -59,25 +65,27 @@ int main(int argc, char *argv[]) {
 
     drawRobo(renderer, mouse);
     
-    drawSensor(renderer, mouse, sensor1);
-    drawSensor(renderer, mouse, sensor2);
-    drawSensor(renderer, mouse, sensor3);
-    drawSensor(renderer, mouse, sensor4);
+    // drawSensor(renderer, mouse, sensor1);
+    // drawSensor(renderer, mouse, sensor2);
+    // drawSensor(renderer, mouse, sensor3);
+    // drawSensor(renderer, mouse, sensor4);
     drawSensor(renderer, mouse, sensor5);
     
 
     drawLabyrinth(renderer, labyrinth);
-    mouse.updatePosition(0.1, 0.2);
+    mouse.updatePosition(0.3, 0.31);
     sensor1.updatePosition(mouse);
     sensor2.updatePosition(mouse);
     sensor3.updatePosition(mouse);
     sensor4.updatePosition(mouse);
     sensor5.updatePosition(mouse);
-    // sensor1.getDistance(mouse, labyrinth);
-    // sensor2.getDistance(mouse, labyrinth);
-    // sensor3.getDistance(mouse, labyrinth);
-    // sensor4.getDistance(mouse, labyrinth);
-    // sensor5.getDistance(mouse, labyrinth);
+    // sensor1.getDistanceToWall(labyrinth);
+    // sensor2.getDistanceToWall(labyrinth);
+    // sensor3.getDistanceToWall(labyrinth);
+    // sensor4.getDistanceToWall(labyrinth);
+    sensor5.getDistanceToWall(renderer, labyrinth);
+    cout << "intersectionDistMeasure:  " << sensor5.dist_measure << ", " << " " << endl;
+
 
     SDL_RenderPresent(renderer);
   }
