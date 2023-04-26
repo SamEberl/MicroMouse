@@ -10,4 +10,4 @@
 #define MOUSE_WIDTH 90 //in mm
 #define MOUSE_HEIGHT 110
 
-#define SENSOR_RANGE 100 //in mm
+#define SENSOR_RANGE 130 //in mm
