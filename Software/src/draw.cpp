@@ -4,6 +4,7 @@
 #include "draw.h"
 #include "classes.h"
 #include "defs.h"
+#include "estimations.h"
 
 using namespace std;
 
@@ -54,28 +55,60 @@ void drawRotatedSquare(SDL_Renderer *renderer, float x, float y, float direction
 
 
 void drawRobo(SDL_Renderer *renderer, Robot mouse){
-    float x = mouse.position[0];
-    float y = mouse.position[1];
-    float x_dir = cos(mouse.direction);
-    float y_dir = sin(mouse.direction);
+    float x = mouse.rob_pos[0];
+    float y = mouse.rob_pos[1];
+    float x_dir = cos(mouse.rob_dir);
+    float y_dir = sin(mouse.rob_dir);
     float width = mouse.width;
     float height = mouse.height;
-    SDL_SetRenderDrawColor(renderer, 55, 55, 55, SDL_ALPHA_OPAQUE);
-    drawRotatedSquare(renderer, x, y, x_dir, y_dir, width, height);
-    SDL_SetRenderDrawColor(renderer, 255, 55, 55, SDL_ALPHA_OPAQUE);
-    SDL_RenderDrawLine(renderer, x, y, x+x_dir*width/2, y+y_dir*height/2);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    drawRotatedSquare(renderer, x, y, x_dir, y_dir, height, width);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderDrawLine(renderer, x, y, x+x_dir*height/2, y+y_dir*height/2);
+
+    drawSensor(renderer, mouse.sensR);
+    drawSensor(renderer, mouse.sensR2);
+    drawSensor(renderer, mouse.sensS);
+    drawSensor(renderer, mouse.sensL2);
+    drawSensor(renderer, mouse.sensL);
 }
 
-void drawSensor(SDL_Renderer *renderer, Robot mouse, Sensor sensor){
-    float x = sensor.position[0];
-    float y = sensor.position[1];
-    SDL_SetRenderDrawColor(renderer, 50, 255, 50, SDL_ALPHA_OPAQUE);
+void drawRobo(SDL_Renderer *renderer, RobotEst mouse){
+    float x = mouse.rob_pos[0];
+    float y = mouse.rob_pos[1];
+    float x_dir = cos(mouse.rob_dir);
+    float y_dir = sin(mouse.rob_dir);
+    float width = mouse.width;
+    float height = mouse.height;
+    SDL_SetRenderDrawColor(renderer, 100, 100, 255, SDL_ALPHA_OPAQUE);
+    drawRotatedSquare(renderer, x, y, x_dir, y_dir, height, width);
+    SDL_SetRenderDrawColor(renderer, 100, 100, 255, SDL_ALPHA_OPAQUE);
+    SDL_RenderDrawLine(renderer, x, y, x+x_dir*height/2, y+y_dir*height/2);
+
+    drawSensor(renderer, mouse.sensR);
+    drawSensor(renderer, mouse.sensR2);
+    drawSensor(renderer, mouse.sensS);
+    drawSensor(renderer, mouse.sensL2);
+    drawSensor(renderer, mouse.sensL);
+}
+
+void drawSensor(SDL_Renderer *renderer, Sensor sensor){
+    float x = sensor.sens_pos[0];
+    float y = sensor.sens_pos[1];
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawLine(renderer, x, y,
-                        x + cos(sensor.direction)*sensor.dist_measure, 
-                        y + sin(sensor.direction)*sensor.dist_measure);
+                        x + cos(sensor.sens_dir)*sensor.dist_measure, 
+                        y + sin(sensor.sens_dir)*sensor.dist_measure);
 }
 
-
+void drawSensor(SDL_Renderer *renderer, SensorEst sensor){
+    float x = sensor.sens_pos[0];
+    float y = sensor.sens_pos[1];
+    SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE);
+    SDL_RenderDrawLine(renderer, x, y,
+                        x + cos(sensor.sens_dir)*sensor.dist_measure, 
+                        y + sin(sensor.sens_dir)*sensor.dist_measure);
+}
 
 void drawLabyrinth(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]){
     vector<float> p1(2), p2(2), p3(2), p4(2);
@@ -90,25 +123,63 @@ void drawLabyrinth(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYR
 
             //draw north
             if (labyrinth[i][j].has_wall('N')){
-                SDL_SetRenderDrawColor(renderer, 200, 200, 255, 128);
+                SDL_SetRenderDrawColor(renderer, 130, 130, 255, 128);
                 SDL_RenderDrawLine(renderer, p1[0], p1[1], p2[0], p2[1]);
             }
             
             //draw east
             if (labyrinth[i][j].has_wall('E')){
-                SDL_SetRenderDrawColor(renderer, 200, 200, 255, 128);
+                SDL_SetRenderDrawColor(renderer, 130, 130, 255, 128);
                 SDL_RenderDrawLine(renderer, p2[0], p2[1], p3[0], p3[1]);
             }
             
             //draw south
             if (labyrinth[i][j].has_wall('S')){
-                SDL_SetRenderDrawColor(renderer, 200, 200, 255, 128);
+                SDL_SetRenderDrawColor(renderer, 130, 130, 255, 128);
                 SDL_RenderDrawLine(renderer, p4[0], p4[1], p3[0], p3[1]);
             }
             
             //draw west
             if (labyrinth[i][j].has_wall('W')){
-                SDL_SetRenderDrawColor(renderer, 200, 200, 255, 128);
+                SDL_SetRenderDrawColor(renderer, 130, 130, 255, 128);
+                SDL_RenderDrawLine(renderer, p1[0], p1[1], p4[0], p4[1]);
+            }
+        }
+    }
+}
+
+void drawLabyrinth(SDL_Renderer *renderer, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]){
+    vector<float> p1(2), p2(2), p3(2), p4(2);
+
+    for (int i = 0; i < LABYRINTH_WIDTH; i += 1)
+    {
+        for (int j = 0; j < LABYRINTH_HEIGHT; j += 1){
+            p1 = labyrinth[i][j].get_point('1');
+            p2 = labyrinth[i][j].get_point('2');
+            p3 = labyrinth[i][j].get_point('3');
+            p4 = labyrinth[i][j].get_point('4');
+
+            //draw north
+            if (labyrinth[i][j].has_wall('N')){
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 128);
+                SDL_RenderDrawLine(renderer, p1[0], p1[1], p2[0], p2[1]);
+            }
+            
+            //draw east
+            if (labyrinth[i][j].has_wall('E')){
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 128);
+                SDL_RenderDrawLine(renderer, p2[0], p2[1], p3[0], p3[1]);
+            }
+            
+            //draw south
+            if (labyrinth[i][j].has_wall('S')){
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 128);
+                SDL_RenderDrawLine(renderer, p4[0], p4[1], p3[0], p3[1]);
+            }
+            
+            //draw west
+            if (labyrinth[i][j].has_wall('W')){
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 128);
                 SDL_RenderDrawLine(renderer, p1[0], p1[1], p4[0], p4[1]);
             }
         }

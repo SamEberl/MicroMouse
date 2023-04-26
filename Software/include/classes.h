@@ -8,45 +8,6 @@
 
 using namespace std;
 
-struct Point {
-    float x;
-    float y;
-};
-
-/*
-class LineSegment {
-public:
-    float start, end;
-
-    LineSegment(Point start, Point end);
-};
-*/
-
-
-class Robot {
-    public:
-        vector<float> position;
-        vector<float> velocity;
-        float direction;
-        float distance_wheels;
-        float width;
-        float height;
-
-        Robot(float x, float y, float x_dir, float y_dir, float distance_wheels, float width, float height);
-        void updatePosition(float SpeedL, float SpeedR);
-};
-
-class Wall {
-    public:
-        bool seen;
-        bool exists;
-        vector<float> start;
-        vector<float> end;
-
-        Wall(vector<float> start_, vector<float> end_);
-};
-
-
 class Cell {
 public:
     Cell();
@@ -56,8 +17,8 @@ public:
     vector<float> get_point(char pointNumber) const;
     bool has_wall(char direction) const;
     void remove_wall(char direction);
-    bool is_visited() const;
-    void set_visited(bool value);
+    bool is_seen() const;
+    void set_seen(bool value);
 
 private:
     float row;
@@ -66,7 +27,7 @@ private:
     bool E;
     bool S;
     bool W;
-    bool visited;
+    bool seen;
     vector<float> p1;
     vector<float> p2;
     vector<float> p3;
@@ -77,13 +38,33 @@ class Sensor {
     public:
         float dist_measure;
         float offset_direction;
-        float direction;
+        float sens_dir;
         float offset_position;
-        vector<float> position;
+        vector<float> sens_pos;
 
-        Sensor(Robot mouse, float offset_direction_, float offset_position_);
-        void updatePosition(Robot mouse);
-        void getDistanceToWall(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]);
+        Sensor();
+        void init(vector<float> robot_pos, float robot_dir, float offset_direction_, float offset_position_);
+        void updatePosition(vector<float> robot_pos, float robot_dir);
+        void getDistanceToWall(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]);
+};
+
+class Robot {
+    public:
+        vector<float> rob_pos;
+        vector<float> velocity;
+        float rob_dir;
+        float distance_wheels;
+        float width;
+        float height;
+        Sensor sensR;
+        Sensor sensR2;
+        Sensor sensS;
+        Sensor sensL2;
+        Sensor sensL;
+
+        Robot(float x, float y, float direction_, float distance_wheels, float width, float height);
+        void updatePosition(float SpeedL, float SpeedR);
+        void measureDistances(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]);
 };
 
 #endif

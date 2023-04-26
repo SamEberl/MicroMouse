@@ -7,9 +7,13 @@
 #include <algorithm> 
 #include "utils.h"
 #include "classes.h"
+#include "estimations.h"
 
 using namespace std;
 
+void setup_sdl(){
+
+}
 
 float distBetweenPoints(vector<float> p1, vector<float> p2){
   // function to get distance between two points
@@ -24,11 +28,38 @@ int random_int(int min, int max) {
     static random_device rd;
     static mt19937 gen(rd());
     uniform_int_distribution<> dis(min, max);
+    return 4;
     return dis(gen);
+}
+
+float gaussianNoise(float mean, float stddev) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::normal_distribution<float> dist(mean, stddev);
+    return dist(gen);
+}
+
+
+void init_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
+    for (int i = 0; i < LABYRINTH_WIDTH; i++) {
+        for (int j = 0; j < LABYRINTH_HEIGHT; j++) {
+            labyrinth[i][j].initialize(i, j);
+        }
+    }
+}
+
+void init_labyrinth(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
+    for (int i = 0; i < LABYRINTH_WIDTH; i++) {
+        for (int j = 0; j < LABYRINTH_HEIGHT; j++) {
+            labyrinth[i][j].initialize(i, j);
+        }
+    }
 }
 
 // function to generate a random labyrinth using depth-first search algorithm
 void generate_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
+    init_labyrinth(labyrinth);
+
     stack<Cell*> stack;
     Cell* current = &labyrinth[0][0];
     stack.push(current);
@@ -57,7 +88,7 @@ void generate_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
         shuffle(neighbors.begin(), neighbors.end(), default_random_engine(random_int(0, neighbors.size()-1)));
 
         for (Cell* neighbor : neighbors) {
-            if (neighbor->is_visited()) {
+            if (neighbor->is_seen()) {
                 continue;
             }
             if (neighbor->get_row() < current->get_row()) {
@@ -76,8 +107,57 @@ void generate_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
                 current->remove_wall('E');
                 neighbor->remove_wall('W');
             }
-            neighbor->set_visited(true);
+            neighbor->set_seen(true);
             stack.push(neighbor);
+        }
+    }
+}
+
+void generate_custom_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
+    init_labyrinth(labyrinth);
+    // bool walls_E[6][6] = {  {true, true, true, true, 1, 1},
+    //                         {true, true, true, true, 1, 1},
+    //                         {true, true, true, true, 1, 1},
+    //                         {true, true, true, true, 1, 1},
+    //                         {true, true, true, true, 1, 1},
+    //                         {true, true, true, true, 1, 1}};
+
+    // bool walls_E[6][6] = {  {0, 0, 0, 0, 0, 0},
+    //                         {0, 0, 0, 0, 0, 0},
+    //                         {0, 0, 0, 0, 0, 0},
+    //                         {0, 0, 0, 0, 0, 0},
+    //                         {0, 0, 0, 0, 0, 0},
+    //                         {0, 0, 0, 0, 0, 0}};
+    // bool walls_S[6][6] = {  {0, 0, 0, 0, 0, 0},
+    //                         {0, 0, 0, 0, 0, 0},
+    //                         {0, 0, 0, 0, 0, 0},
+    //                         {0, 0, 0, 0, 0, 0},
+    //                         {0, 0, 0, 0, 0, 0},
+    //                         {0, 0, 0, 0, 0, 0}};
+
+    bool walls_E[6][6] = {  {1, 1, 1, 1, 0, 1},
+                            {1, 1, 1, 1, 1, 1},
+                            {1, 1, 1, 1, 1, 1},
+                            {1, 1, 1, 1, 1, 1},
+                            {1, 1, 1, 1, 1, 1},
+                            {1, 1, 1, 1, 0, 1}};
+    bool walls_S[6][6] = {  {0, 1, 1, 1, 0, 0},
+                            {0, 1, 1, 1, 0, 0},
+                            {1, 1, 1, 1, 0, 0},
+                            {1, 1, 1, 1, 0, 0},
+                            {1, 1, 1, 1, 0, 0},
+                            {1, 1, 1, 1, 1, 1}};
+    for (int i = 0; i < LABYRINTH_WIDTH; i++) {
+        for (int j = 0; j < LABYRINTH_HEIGHT; j++) {
+            // cout << walls_W[i][j];
+            if (!walls_E[i][j]) {
+                labyrinth[i][j].remove_wall('E');
+                labyrinth[i][j+1].remove_wall('W');
+            }
+            if (!walls_S[i][j]) {
+                labyrinth[i][j].remove_wall('S');
+                labyrinth[i+1][j].remove_wall('N');
+            }
         }
     }
 }
@@ -113,8 +193,7 @@ int print_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
     return 0;
 }
 
-vector<float> findIntersection(SDL_Renderer *renderer,
-                                vector<float> starting_point, 
+vector<float> findIntersection(vector<float> starting_point, 
                                 vector<float> end_point, 
                                 vector<float> wall_point1, 
                                 vector<float> wall_point2,
@@ -141,17 +220,13 @@ vector<float> findIntersection(SDL_Renderer *renderer,
         // the two lines intersect, so return the intersection point and distance
         float x = x1 + t * (x2 - x1);
         float y = y1 + t * (y2 - y1);
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 128);
-        SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 128);
-        SDL_RenderDrawPoint(renderer, x, y);
         distance_to_intersection = sqrt(pow(x - x3, 2) + pow(y - y3, 2));
         intersection_found = true;
         return vector<float>{x, y};
     } else {
         // the two lines do not intersect, so return (-1, -1) and distance 0
         intersection_found = false;
-        distance_to_intersection = 0.0;
+        distance_to_intersection = -1.0;
         return vector<float>{-1.0, -1.0};
     }
 }

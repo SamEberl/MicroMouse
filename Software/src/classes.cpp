@@ -5,37 +5,13 @@
 #include "classes.h"
 #include "defs.h"
 #include "utils.h"
-
 #include <SDL2/SDL.h>
 
 #define _USE_MATH_DEFINES
 
+// use array<float, 2> instead of vector for efficiency?
 
-Robot::Robot(float x, float y, float x_dir, float y_dir, float distance_wheels_, float width_, float height_) {
-    position.resize(2);
-    position = {x, y};
-    velocity = {x, y};
-    direction = -M_PI_2;
-    distance_wheels = distance_wheels_;
-    width = width_;
-    height = height_;
-}
-
-
-void Robot::updatePosition(float speedLeft, float speedRight) {
-    // Calculate the speed of the robot
-    float speed = (speedLeft + speedRight) / 2;
-    // Calculate the angular velocity of the robot
-    float angularVelocity = (speedLeft - speedRight) / distance_wheels;
-    // Update the direction of the robot
-    float deltaTime = 1; //Param?
-    direction += angularVelocity * deltaTime;
-    // Calculate the new position of the robot
-    position[0] += speed * cos(direction) * deltaTime;
-    position[1] += speed * sin(direction) * deltaTime;
-}
-
-Cell::Cell() : N(true), E(true), S(true), W(true), visited(false) {}
+Cell::Cell() : N(true), E(true), S(true), W(true), seen(false) {}
 void Cell::initialize(float row_, float col_) {
     row = row_;
     col = col_;
@@ -97,38 +73,39 @@ void Cell::remove_wall(char direction) {
     }
 }
 
-bool Cell::is_visited() const {return visited;}
+bool Cell::is_seen() const {return seen;}
 
-void Cell::set_visited(bool value) {visited = value;}
+void Cell::set_seen(bool value) {seen = value;}
 
+Sensor::Sensor() {
+    dist_measure = SENSOR_RANGE;
+    sens_pos.resize(2);
+}
 
-Sensor::Sensor(Robot mouse, float offset_direction_, float offset_position_) {
+void Sensor::init(vector<float> robot_pos, float robot_dir, float offset_direction_, float offset_position_) {
     dist_measure = SENSOR_RANGE;
 
     offset_direction = offset_direction_;
-    direction = mouse.direction + offset_direction;
+    sens_dir = robot_dir + offset_direction;
 
-    position.resize(2);
     offset_position = offset_position_;
-    position[0] = mouse.position[0] + cos(direction)*offset_position;
-    position[1] = mouse.position[1] + sin(direction)*offset_position;
-
-
+    sens_pos[0] = robot_pos[0] + cos(sens_dir)*offset_position;
+    sens_pos[1] = robot_pos[1] + sin(sens_dir)*offset_position;
 }
 
-void Sensor::updatePosition(Robot mouse) {
-    direction = mouse.direction + offset_direction;
+void Sensor::updatePosition(vector<float> robot_pos, float robot_dir) {
+    sens_dir = robot_dir + offset_direction;
 
-    position[0] = mouse.position[0] + cos(direction)*this->offset_position;
-    position[1] = mouse.position[1] + sin(direction)*this->offset_position;
+    sens_pos[0] = robot_pos[0] + cos(sens_dir)*this->offset_position;
+    sens_pos[1] = robot_pos[1] + sin(sens_dir)*this->offset_position;
 }
 
-void Sensor::getDistanceToWall(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
+void Sensor::getDistanceToWall(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
     float shortest_dist_measure = SENSOR_RANGE;
     float temp_dist_measure = SENSOR_RANGE;
     bool intersection_found = false;
     vector<float> intersection = {-1.0, -1.0};
-    vector<float> end_sensor = {position[0] + cos(direction) * SENSOR_RANGE, position[1] + sin(direction) * SENSOR_RANGE};
+    vector<float> end_sensor = {sens_pos[0] + cos(sens_dir) * SENSOR_RANGE, sens_pos[1] + sin(sens_dir) * SENSOR_RANGE};
     vector<float> wall_start;
     vector<float> wall_end;
     for (int i = 0; i < LABYRINTH_WIDTH; i += 1){
@@ -136,13 +113,7 @@ void Sensor::getDistanceToWall(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_
             if (labyrinth[i][j].has_wall('N')){
                 wall_start = labyrinth[i][j].get_point('1');
                 wall_end = labyrinth[i][j].get_point('2');
-                intersection = findIntersection(renderer,
-                                                position, 
-                                                end_sensor, 
-                                                wall_start, 
-                                                wall_end, 
-                                                temp_dist_measure, 
-                                                intersection_found);
+                intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
                 if (intersection_found){
                     if (shortest_dist_measure > temp_dist_measure) {
                         shortest_dist_measure = temp_dist_measure;
@@ -152,13 +123,7 @@ void Sensor::getDistanceToWall(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_
             if (labyrinth[i][j].has_wall('E')){
                 wall_start = labyrinth[i][j].get_point('2');
                 wall_end = labyrinth[i][j].get_point('3');
-                intersection = findIntersection(renderer,
-                                                position, 
-                                                end_sensor, 
-                                                wall_start, 
-                                                wall_end, 
-                                                temp_dist_measure, 
-                                                intersection_found);
+                intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
                 if (intersection_found){
                     if (shortest_dist_measure > temp_dist_measure) {
                         shortest_dist_measure = temp_dist_measure;
@@ -168,13 +133,7 @@ void Sensor::getDistanceToWall(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_
             if (labyrinth[i][j].has_wall('S')){
                 wall_start = labyrinth[i][j].get_point('3');
                 wall_end = labyrinth[i][j].get_point('4');
-                intersection = findIntersection(renderer,
-                                                position, 
-                                                end_sensor, 
-                                                wall_start, 
-                                                wall_end, 
-                                                temp_dist_measure, 
-                                                intersection_found);
+                intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
                 if (intersection_found){
                     if (shortest_dist_measure > temp_dist_measure) {
                         shortest_dist_measure = temp_dist_measure;
@@ -184,13 +143,7 @@ void Sensor::getDistanceToWall(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_
             if (labyrinth[i][j].has_wall('W')){
                 wall_start = labyrinth[i][j].get_point('4');
                 wall_end = labyrinth[i][j].get_point('1');
-                intersection = findIntersection(renderer,
-                                                position, 
-                                                end_sensor, 
-                                                wall_start, 
-                                                wall_end, 
-                                                temp_dist_measure, 
-                                                intersection_found);
+                intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
                 if (intersection_found){
                     if (shortest_dist_measure > temp_dist_measure) {
                         shortest_dist_measure = temp_dist_measure;
@@ -199,5 +152,51 @@ void Sensor::getDistanceToWall(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_
             }
         }
     }
-    dist_measure = shortest_dist_measure;
+    dist_measure = shortest_dist_measure + gaussianNoise(0, 0);
+}
+
+
+Robot::Robot(float x, float y, float direction_, float distance_wheels_, float width_, float height_) {
+    rob_pos.resize(2);
+    rob_pos = {x, y};
+    velocity = {x, y};
+    rob_dir = direction_;
+    distance_wheels = distance_wheels_;
+    width = width_;
+    height = height_;
+
+    sensR.init(rob_pos, rob_dir, M_PI/2, width/2);
+    sensR2.init(rob_pos, rob_dir, M_PI/4, height/2);
+    sensS.init(rob_pos, rob_dir, 0.0, height/2);
+    sensL2.init(rob_pos, rob_dir, -M_PI/4, height/2);
+    sensL.init(rob_pos, rob_dir, -M_PI/2, width/2);
+}
+
+void Robot::updatePosition(float speedLeft, float speedRight) {
+    float deltaTime = 1; //Param?
+    float wheelRadius = 1;
+    // Calculate the new position of the robot
+    float speed = wheelRadius * (speedLeft + speedRight) / 2;
+    float angularVelocity = wheelRadius * (speedLeft - speedRight) / distance_wheels;
+    rob_dir = fmod(rob_dir + angularVelocity * deltaTime, 2*M_PI);
+    if (rob_dir < 0) {
+        rob_dir += 2*M_PI;
+    }
+    rob_pos[0] += speed * cos(rob_dir) * deltaTime;
+    rob_pos[1] += speed * sin(rob_dir) * deltaTime;
+
+    // Calculate the new position of the sensors
+    sensR.updatePosition(rob_pos, rob_dir);
+    sensR2.updatePosition(rob_pos, rob_dir);
+    sensS.updatePosition(rob_pos, rob_dir);
+    sensL2.updatePosition(rob_pos, rob_dir);
+    sensL.updatePosition(rob_pos, rob_dir);
+}
+
+void Robot::measureDistances(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
+    sensR.getDistanceToWall(labyrinth);
+    sensR2.getDistanceToWall(labyrinth);
+    sensS.getDistanceToWall(labyrinth);
+    sensL2.getDistanceToWall(labyrinth);
+    sensL.getDistanceToWall(labyrinth);
 }
