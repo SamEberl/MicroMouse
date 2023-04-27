@@ -41,11 +41,17 @@ void setupIO()
     // PERIPHERAL receives data from which INPUT  
     RPINR18bits.U1RXR = 24; //mapped to RP24 is U1 RX, CHANGE THIS
 
+    //MOTOR RIGHT
+    //PERIPHERAL QEA Encoder 1, receives data from RP19
+    RPINR14bits.QEA1R = 19; 
+    //PERIPHERAL QEB Encoder 1, receives data from RP20
+    RPINR14bits.QEB1R = 20;
     
-    //PERIPHERAL QEA Encoder 1, receives data from RP10
-    //RPINR14bits.QEA1R = 10; 
-    //PERIPHERAL QEB Encoder 1, receives data from RP11
-    //RPINR14bits.QEB1R = 11;
+    //MOTOR LEFT
+    //PERIPHERAL QEA Encoder 2, receives data from RP21
+    RPINR16bits.QEA2R = 21; 
+    //PERIPHERAL QEB Encoder 2, receives data from RP4
+    RPINR16bits.QEB2R = 4;
     
     
     //OUTPUT PIN receives data from which PERIPHERAL, 

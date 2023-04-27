@@ -4,6 +4,9 @@
 #include "ioconfig.h"
 #include "general.h"
 #include "xc.h"
+#include "motors.h"
+#include "motorEncoders.h"
+#include "motor_public.h"
 
 errorCode getSensorVal(uint8_t sensorNum, uint8_t *data){
     switch(sensorNum) {
@@ -22,12 +25,22 @@ errorCode getSensorVal(uint8_t sensorNum, uint8_t *data){
     }
 }
 
-errorCode getMotorVelocity(motor mot, uint8_t *data){
-    return GENERAL_ERROR;
+errorCode getMotorVelocity(uint8_t mot, int8_t *velocity){
+    switch(mot){
+        case MOTOR_L:
+            velocity[0] = getMotorLeftVelocity();
+            break;
+        case MOTOR_R:
+            velocity[0] = getMotorRightVelocity();
+            break;
+        default:
+            return INVALID_ARGUMENT_ERROR;
+    }
+    return OK;
 }
 
-errorCode setMotorVelocity(motor mot, uint8_t data){
-    return GENERAL_ERROR;
+errorCode setMotorVelocity(uint8_t mot, int8_t velocity){
+    return setDesiredVelocity(mot,velocity);
 }
 
 errorCode registerButtonPressedCB(ButtonPressedCB callback){

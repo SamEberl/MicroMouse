@@ -3,7 +3,7 @@
 #include "general.h"
 #include "xc.h"
 
-static uint8_t statusAsw = 0;
+static uint8_t statusAsw = 20;
 
 void incrementStatus(void) {
     statusAsw++;
@@ -33,4 +33,5 @@ void asw_10ms(void){
         setLEDState(2,OFF);
     }
     setASWStatus(statusAsw);
+    setMotorVelocity(MOTOR_L,statusAsw);
 }

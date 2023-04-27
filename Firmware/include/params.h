@@ -16,7 +16,7 @@ typedef enum parameters{
 
 #define NUM_PARAMETERS 7u
 
-#define PARAM_DEFAULTS {0,0,0,0,0,0,0}
+#define PARAM_DEFAULTS {30,3,2,30,3,2,0}
 
 errorCode getParameter(parameters param, uint16_t *data);
 errorCode setParameter(parameters param, uint16_t data);

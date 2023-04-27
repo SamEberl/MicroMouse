@@ -5,15 +5,16 @@
 #include "i2cComm.h"
 #include "uartTp.h"
 #include "vl6180x.h"
-//#include "myPWM.h"
+#include "myPWM.h"
 #include "diag.h"
-//#include "motors.h"
+#include "motors.h"
 #include "xc.h"
+#include "motorEncoders.h"
 
 void bsw_init(void) {
     setupIO(); //configures inputs and outputs
     initTimer1(10.0);
-    //uartTp_init();
+    uartTp_init();
     setupI2C();
     startI2C();
     SEN1 = SENOFF;
@@ -33,10 +34,16 @@ void bsw_init(void) {
     uartTp_registerUpdateFunc(sensor4, &getSensor4Data);
     uartTp_registerUpdateFunc(sensor5, &getSensor5Data);
     
-    //initPWM1(1000);
-    //motor_init();
+    initPWM1(1000);
+    initQEI1(1000);
+    initQEI2(1000);
     
-    //diag_init();
+    uartTp_registerUpdateFunc(motRActVel, &getMororRightVelocityData);
+    uartTp_registerUpdateFunc(motLActVel, &getMororLeftVelocityData);
+    motor_init();
+    //setPWM1Mode(1,ENABLE_H_DISABLE_L);
+    //setPWM1DC(1,0.4);
+    diag_init();
 }
 
 void init_end(void) {
@@ -45,8 +52,9 @@ void init_end(void) {
 
 void bsw_10ms(void) {
     IO_10ms();
-    //motor_10ms();
-    //uartTp_10ms();
+    motorEncoder_10ms();
+    motor_10ms();
+    uartTp_10ms();
     I2CTp_10ms();
-    //diag_10ms();
+    diag_10ms();
 }

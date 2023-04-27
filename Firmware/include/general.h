@@ -46,12 +46,6 @@ typedef enum errorCode{
     BUSY
 }errorCode;
 
-
-typedef enum motor{
-    LEFT,
-    RIGHT
-}motor;
-
 typedef enum LEDState{
     ON,
     OFF
