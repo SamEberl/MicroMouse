@@ -75,20 +75,20 @@ int main(int argc, char *argv[]) {
     // }
 
 
-    if (mouse.sensS.dist_measure < SENSOR_RANGE*3/5) {
-      mouse.updatePosition(-1.5, 1.5);
+    if (mouse.sensS.dist_measure < SENSOR_RANGE*2/5) {
+      mouse.updatePosition(-2.5, 2.5);
     } else if (mouse.sensR2.dist_measure < SENSOR_RANGE*2/5) {
-      mouse.updatePosition(-1.5, 1.5);
+      mouse.updatePosition(-2.5, 2.5);
     } else {
-      mouse.updatePosition(1.5, 1.5);
+      mouse.updatePosition(2.5, 2.5);
     }
 
-    if (mouseEst.sensS.dist_measure < SENSOR_RANGE*3/5) {
-      mouseEst.updatePosition(-1.5, 1.5);
+    if (mouseEst.sensS.dist_measure < SENSOR_RANGE*2/5) {
+      mouseEst.updatePosition(-2.5, 2.5);
     } else if (mouseEst.sensR2.dist_measure < SENSOR_RANGE*2/5) {
-      mouseEst.updatePosition(-1.5, 1.5);
+      mouseEst.updatePosition(-2.5, 2.5);
     } else {
-      mouseEst.updatePosition(1.5, 1.5);
+      mouseEst.updatePosition(2.5, 2.5);
     }
 
     // mouse.updatePosition(-0.005, 0.005);
@@ -98,9 +98,6 @@ int main(int argc, char *argv[]) {
 
     mouse.measureDistances(labyrinth);
     mouseEst.compareDistances(renderer, mouse, labyrinthEst);
-
-
-    cout << "real mouse direction: " << mouse.rob_dir << endl;
     mouseEst.horizontal_dist_to_west_wall(M_PI/6, 1);
 
     SDL_RenderPresent(renderer);

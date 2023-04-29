@@ -147,8 +147,8 @@ void generate_custom_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]
                             {1, 1, 1, 1, 0, 0},
                             {1, 1, 1, 1, 0, 0},
                             {1, 1, 1, 1, 1, 1}};
-    for (int i = 0; i < LABYRINTH_WIDTH; i++) {
-        for (int j = 0; j < LABYRINTH_HEIGHT; j++) {
+    for (int i = 0; i < LABYRINTH_HEIGHT; i++) {
+        for (int j = 0; j < LABYRINTH_WIDTH; j++) {
             // cout << walls_W[i][j];
             if (!walls_E[i][j]) {
                 labyrinth[i][j].remove_wall('E');

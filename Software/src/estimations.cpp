@@ -12,9 +12,9 @@
 
 using namespace std;
 
-float WALL_RETAIN = 0.9;
+float WALL_RETAIN = 0.99;
 float POS_RETAIN = 0.999;
-float SPEED_VAR = 0.4;
+float SPEED_VAR = 0.15;
 
 CellEst::CellEst() : N(0.5), E(0.5), S(0.5), W(0.5), seen(false) {}
 void CellEst::initialize(float row_, float col_) {
@@ -47,18 +47,19 @@ vector<float> CellEst::get_point(char pointNumber) const {
 }
 
 bool CellEst::has_wall(char direction) const {
+    float threshold = 0.51;
     switch (direction) {
         case 'N':
-            if (N > 0.8) {return true;}
+            if (N > threshold) {return true;}
             else {return false;}
         case 'E':
-            if (E > 0.8) {return true;}
+            if (E > threshold) {return true;}
             else {return false;}
         case 'S':
-            if (S > 0.8) {return true;}
+            if (S > threshold) {return true;}
             else {return false;}
         case 'W':
-            if (W > 0.8) {return true;}
+            if (W > threshold) {return true;}
             else {return false;}
         default:
             return true;
@@ -102,6 +103,7 @@ void SensorEst::init(vector<float> robot_pos, float robot_dir, float offset_dire
     offset_position = offset_position_;
     sens_pos[0] = robot_pos[0] + cos(sens_dir)*offset_position;
     sens_pos[1] = robot_pos[1] + sin(sens_dir)*offset_position;
+    // TODO set probability for outer walls to 1
 }
 
 void SensorEst::updatePosition(vector<float> robot_pos, float robot_dir) {
@@ -120,9 +122,9 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
     looking_at = '0';
     intersection = {-1.0, -1.0};
     // float min_corner_dist = CELL_SIZE / 20;
-    float min_corner_dist = 3;
-    float tolerance_dist = 20;
-    float ignore_max = 21;
+    float min_corner_dist = 5;
+    float tolerance_dist = 5;
+    float ignore_max = 6;
     float shortest_dist_measure = SENSOR_RANGE;
     float temp_dist_measure = SENSOR_RANGE;
     int cell_column = -1;
@@ -160,7 +162,9 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                     } 
                 } else if (dist_measure > (temp_dist_measure + tolerance_dist)) {
                     labyrinth[i][j].update_wall('N', false);
-                    // labyrinth[i][j-1].update_wall('S', false); //TODO update opposite wall accordingly
+                    if (j-1 >= 0){
+                        labyrinth[i][j-1].update_wall('S', false);
+                    }
                 }
             }
             wall_start = labyrinth[i][j].get_point('2');
@@ -183,6 +187,9 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                     } 
                 } else if (dist_measure > (temp_dist_measure + tolerance_dist)) {
                     labyrinth[i][j].update_wall('E', false);
+                    if (i+1 < LABYRINTH_WIDTH){
+                        labyrinth[i+1][j].update_wall('W', false);
+                    }
                 }
             }
             wall_start = labyrinth[i][j].get_point('3');
@@ -205,6 +212,9 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                     } 
                 } else if (dist_measure > (temp_dist_measure + tolerance_dist)) {
                     labyrinth[i][j].update_wall('S', false);
+                    if (j+1 < LABYRINTH_HEIGHT){
+                        labyrinth[i][j+1].update_wall('S', false);
+                    }
                 }
             }
             wall_start = labyrinth[i][j].get_point('4');
@@ -227,18 +237,17 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                     } 
                 } else if (dist_measure > (temp_dist_measure + tolerance_dist)) {
                     labyrinth[i][j].update_wall('W', false);
+                    if (i-1 >= 0){
+                        labyrinth[i-1][j].update_wall('E', false);
+                    }
                 }
             }
         }
     }
     if (looking_at != '0') {
-        labyrinth[cell_column][cell_row].update_wall(looking_at, true);
+        labyrinth[cell_column][cell_row].update_wall(looking_at, true); //TODO update opposite wall as well
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 128);
         SDL_RenderDrawLine(renderer, p1, p2, p3, p4);
-        cout << "i: " << intersection[0] << "," << intersection[1] << endl;
-        // if (labyrinth[cell_column][cell_row].has_wall(looking_at)){
-        //     rob_pos[1] = POS_RETAIN*rob_pos[1] + (1-POS_RETAIN)*(intersection[1] - cos(sens_dir)*dist_measure);
-        // }
     }
 }
 
@@ -257,7 +266,7 @@ RobotEst::RobotEst(float x, float y, float direction_, float distance_wheels_, f
     sensL.init(rob_pos, rob_dir, -M_PI/2, width/2);
 }
 
-void RobotEst::get_offset_left(float& offset, float& theta_rel, float alpha=M_PI/4, float beta=M_PI/2){
+void RobotEst::get_offset_left(float& height, float& angle_rel, float alpha=M_PI/4, float beta=M_PI/2){
     //   # alpha = angle between e1 and e2
     //   # beta = angle between e1 and forward direction (=e3)
     //   # get L 
@@ -268,19 +277,16 @@ void RobotEst::get_offset_left(float& offset, float& theta_rel, float alpha=M_PI
     float s = (dist_e1 + dist_e2 + L)/2;
     float A = sqrt( s * (s-dist_e1) * (s-dist_e2) * (s-L) );
     //   # use regular A = 1/2 * L * h (with h = offset)
-    offset = (2*A)/L;
+    height = (2*A)/L;
 
-    //   # calculate theta
-    float gamma = acos(max(min(offset/dist_e1, 1.0f), -1.0f));
+    angle_rel = acos(max(min(height/dist_e1, 1.0f), -1.0f));
     if (dist_e2*cos(alpha) < dist_e1){
-        theta_rel = M_PI + beta - gamma;
-    } else {
-        theta_rel = M_PI + beta + gamma;
-    }
+        angle_rel *= -1;
+    } else {}
 
   }
 
-void RobotEst::get_offset_right(float& h, float& theta_rel, float alpha=M_PI/4, float beta=-M_PI/2){
+void RobotEst::get_offset_right(float& height, float& angle_rel, float alpha=M_PI/4, float beta=-M_PI/2){
     //   # alpha = angle between e4 and e5
     //   # beta = angle between e5 and forward direction (=e3)
     //   # get L 
@@ -291,40 +297,51 @@ void RobotEst::get_offset_right(float& h, float& theta_rel, float alpha=M_PI/4, 
     float s = (dist_e4 + dist_e5 + L)/2;
     float A = sqrt( s * (s-dist_e5) * (s-dist_e4) * (s-L) );
     //   # use regular A = 1/2 * L * h
-    h = (2*A)/L;
+    height = (2*A)/L;
 
-    //   # calculate theta
-    float gamma;
-    gamma = acos(max(min(h/dist_e5, 1.0f), -1.0f));
-    if (dist_e4*cos(alpha) < dist_e5){
-        theta_rel = 2*M_PI + beta + gamma;
-    } else {
-        theta_rel = 2*M_PI + beta - gamma;
+    // gamma = acos(max(min(h/dist_e5, 1.0f), -1.0f));
+    // if (dist_e4*cos(alpha) < dist_e5){
+    //     angle_rel = 2*M_PI + beta + gamma;
+    // } else {
+    //     angle_rel = 2*M_PI + beta - gamma;
+    // }
+
+    angle_rel = acos(max(min(height/dist_e5, 1.0f), -1.0f));
+    if (dist_e4*cos(alpha) < dist_e5){}
+    else {
+        angle_rel *= -1;
     }
-
-    // theta_rel = M_PI + gamma;
-    cout << "L: " << L << "  s: " << s << "  A: " << A << "  dist_e4: " << dist_e4 << "  dist_e5: " << dist_e5 << "  h: " << h << "   gamma: " << gamma << "   theta_rel: " << theta_rel << endl;
 }
 
-void RobotEst::get_offset_front_left(float& offset, float& theta_rel, float alpha=M_PI/4){
+void RobotEst::get_offset_front_left(float& height, float& angle_rel, float alpha=M_PI/4){
     float dist_e2 = sensL2.dist_measure + sensL2.offset_position;
     float dist_e3 = sensS.dist_measure + sensS.offset_position;
     float L = sqrt( pow(dist_e3 * cos(alpha) - dist_e2, 2) + pow(dist_e3*sin(alpha), 2) );
     float s = (dist_e2 + dist_e3 + L)/2;
     float A = sqrt( s*(s-dist_e2)*(s-dist_e3)*(s-L) );
-    offset = (2*A)/L;
-    theta_rel = 3*M_PI/2 - alpha + acos(max(min(offset/L, 1.0f), -1.0f));
+    height = (2*A)/L;
+
+    angle_rel = acos(max(min(height/dist_e3, 1.0f), -1.0f));
+    if (dist_e2*cos(alpha) < dist_e3){}
+    else {
+        angle_rel *= -1;
+    }
 }
 
 
-void RobotEst::get_offset_front_right(float& offset, float& theta_rel, float alpha=M_PI/4){
+void RobotEst::get_offset_front_right(float& height, float& angle_rel, float alpha=M_PI/4){
     float dist_e3 = sensS.dist_measure + sensS.offset_position;
     float dist_e4 = sensR2.dist_measure + sensR2.offset_position;
     float L = sqrt( pow(dist_e3 * cos(alpha) - dist_e4, 2) + pow(dist_e3*sin(alpha), 2) );
     float s = (dist_e4 + dist_e3 + L)/2;
     float A = sqrt( s*(s-dist_e4)*(s-dist_e3)*(s-L) );
-    offset = (2*A)/L;
-    theta_rel = 2*M_PI - acos(max(min(offset/L, 1.0f), -1.0f)) - alpha;
+    height = (2*A)/L;
+
+    angle_rel = acos(max(min(height/dist_e3, 1.0f), -1.0f));
+    // cout << "L: " << L << "  s: " << s << "  A: " << A << "  dist_e4: " << dist_e4 << "  dist_e3: " << dist_e3 << "  height: " << height << "   angle_rel: " << angle_rel << endl;
+    if (dist_e4*cos(alpha) < dist_e3){
+        angle_rel *= -1;
+    } else {}
 }
 
 
@@ -332,13 +349,12 @@ void RobotEst::horizontal_dist_to_west_wall(float error_band=M_PI/6, float smoot
     char driving_dir;
 
     bool performed_update = false;
-    float offset;
+    float height;
     float angle_rel;
-    float xnew;
-    float ynew;
+    float num_updates = 0;
 
-    // cout << "----> R2:" << sensR2.looking_at << "   " << "   R:" << sensR.looking_at << "   pos: " << rob_pos[0] << endl;
-    // cout << "intersection: " << sensR2.intersection[0] << "  " << "offset: " << offset << endl;
+    vector <float> temp_rob_pos = {0, 0};
+    float temp_rob_dir = 0; 
 
     //   # determine in which direction we are driving
     if (((2*M_PI - error_band) < rob_dir) || (rob_dir < error_band)) { //# yes, it is 'or'
@@ -357,194 +373,173 @@ void RobotEst::horizontal_dist_to_west_wall(float error_band=M_PI/6, float smoot
     // 1 & 2
     // if ((sensL.looking_at == sensL2.looking_at) && sensL.looking_at != '0') {
     //     performed_update = true;
-    //     get_offset_left(offset, angle_rel, M_PI/4, M_PI/2);
+    //     get_offset_left(height, angle_rel, M_PI/4, M_PI/2);
     //     // # updating
-    //     if((offset != offset) || (angle_rel != angle_rel)){
-    //         return;
+    //     if((height != height) || (angle_rel != angle_rel)){
+    //         cout << "NAN found!" << endl;
     //     }
+    //     num_updates += 1;
     //     if (driving_dir == 'N'){
-    //         xnew = sensL.intersection[0] + offset;
-    //         rob_pos[0] = (1-smoothing) * rob_pos[0] + smoothing * xnew;
-    //         rob_dir = (1-smoothing) * rob_dir + smoothing * angle_rel;
-
-    //         cout << "Wall to the left while moving North" << endl;
+    //         temp_rob_pos[0] += sensL.intersection[0] + height;
+    //         temp_rob_pos[1] += rob_pos[1];
+    //         temp_rob_dir += angle_rel + M_PI;
+    //         // cout << "Wall to the left while moving North" << endl;
     //     }
 
     //     else if (driving_dir == 'S'){
-    //         xnew = sensL.intersection[0] - offset;
-    //         rob_pos[0] = (1-smoothing) * rob_pos[0] + smoothing * xnew;
-    //         rob_dir = (1-smoothing) * rob_dir + smoothing * (angle_rel + M_PI);
-
-    //         cout << "Wall to the left while moving South" << endl;
+    //         temp_rob_pos[0] += sensL.intersection[0] - height;
+    //         temp_rob_pos[1] += rob_pos[1];
+    //         temp_rob_dir += angle_rel + M_PI;
+    //         // cout << "Wall to the left while moving South" << endl;
     //     }
 
     //     else if (driving_dir == 'W'){
-    //         ynew = sensL.intersection[1] - offset;
-    //         rob_pos[1] = (1-smoothing) * rob_pos[1] + smoothing * ynew;
-    //         rob_dir = (1-smoothing) * rob_dir + smoothing * (angle_rel - M_PI/2);
-
-    //         cout << "Wall to the left while moving West" << endl; 
+    //         temp_rob_pos[0] += rob_pos[0];
+    //         temp_rob_pos[1] += sensL.intersection[1] - height;
+    //         temp_rob_dir += angle_rel + M_PI;
+    //         // cout << "Wall to the left while moving West" << endl; 
     //     }
-
-
     //     else if (driving_dir == 'E') {
-    //         ynew = sensL.intersection[1] + offset;
-    //         rob_pos[1] = (1-smoothing) * rob_pos[1] + smoothing * ynew;
-    //         rob_dir = (1-smoothing) * rob_dir + smoothing * (angle_rel - 3*M_PI/2);
-
-    //         cout << "Wall to the left while moving East" << endl;
+    //         temp_rob_pos[0] += rob_pos[0];
+    //         temp_rob_pos[1] += sensL.intersection[1] + height;
+    //         temp_rob_dir += angle_rel + M_PI;
+    //         // cout << "Wall to the left while moving East" << endl;
     //     }
     // }
 
-    // cout << "L2: " << sensL2.looking_at << "   S: " << sensS.looking_at << endl;
-
-    // 2 & 3
+    // // 2 & 3
     // if ((sensL2.looking_at == sensS.looking_at) && sensL2.looking_at != '0') {
     //     performed_update = true;
-    //     get_offset_front_left(offset, angle_rel, M_PI/4);
+    //     get_offset_front_left(height, angle_rel, M_PI/4);
     //     // # updating
-    //     if((offset != offset) || (angle_rel != angle_rel)){
-    //         cout << "NAN found!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+    //     if((height != height) || (angle_rel != angle_rel)){
+    //         cout << "NAN found!" << endl;
     //     }
+    //     num_updates += 1;
     //     if (driving_dir == 'N'){
-    //         ynew = sensS.intersection[1] + offset;
-    //         rob_pos[1] = (1-smoothing) * rob_pos[1] + smoothing * ynew;
-    //         cout << "before: " << rob_dir;
-    //         rob_dir = (1-smoothing) * rob_dir + smoothing * angle_rel;
-    //         cout << "   after: " << rob_dir << endl;
+    //         temp_rob_pos[0] += rob_pos[0];
+    //         temp_rob_pos[1] += sensS.intersection[1] + height;
+    //         temp_rob_dir += angle_rel + M_PI;
     //     }
 
     //     else if (driving_dir == 'S'){
-    //         ynew = sensS.intersection[1] - offset;
-    //         rob_pos[1] = (1-smoothing) * rob_pos[1] + smoothing * ynew;
-    //         cout << "before: " << rob_dir;
-    //         rob_dir = (1-smoothing) * rob_dir + smoothing * (angle_rel - M_PI/2);
-    //         cout << "   after: " << rob_dir << endl;
+    //         temp_rob_pos[0] += rob_pos[0];
+    //         temp_rob_pos[1] += sensS.intersection[1] - height;
+    //         temp_rob_dir += angle_rel + M_PI;
     //     }
 
     //     else if (driving_dir == 'W'){
-    //         xnew = sensS.intersection[0] + offset;
-    //         rob_pos[0] = (1-smoothing) * rob_pos[0] + smoothing * xnew;
-    //         rob_dir = (1-smoothing) * rob_dir + smoothing * (angle_rel - M_PI/2);
+    //         temp_rob_pos[0] += sensS.intersection[0] + height;
+    //         temp_rob_pos[1] += rob_pos[1];
+    //         temp_rob_dir += angle_rel + M_PI;
     //     }
 
     //     else if (driving_dir == 'E') {
-    //         xnew = sensS.intersection[0] - offset;
-    //         rob_pos[0] = (1-smoothing) * rob_pos[0] + smoothing * xnew;
-    //         rob_dir = (1-smoothing) * rob_dir + smoothing * (angle_rel - 3*M_PI/2);
+    //         temp_rob_pos[0] += sensS.intersection[0] - height;
+    //         temp_rob_pos[1] += rob_pos[1];
+    //         temp_rob_dir += angle_rel + M_PI;
     //     }
     // }
 
-    // // 3 & 4
+    // // // 3 & 4
     // if (sensS.looking_at == sensR2.looking_at && sensS.looking_at != '0') {
     //     performed_update = true;
-    //     get_offset_front_right(offset, angle_rel, M_PI/4);
+    //     get_offset_front_right(height, angle_rel, M_PI/4);
     //     // # updating
-    //     if((offset != offset) || (angle_rel != angle_rel)){
-    //         return;
+    //     if((height != height) || (angle_rel != angle_rel)){
+    //         cout << "NAN found!" << endl;
     //     }
+    //     num_updates += 1;
     //     if (driving_dir == 'N'){
-    //         ynew = sensS.intersection[1] + offset;
-    //         rob_pos[1] = (1-smoothing) * rob_pos[1] + smoothing * ynew;
-    //         rob_dir = (1-smoothing) * rob_dir + smoothing * angle_rel;
+    //         temp_rob_pos[0] += rob_pos[0];
+    //         temp_rob_pos[1] += sensS.intersection[1] + height;
+    //         temp_rob_dir += angle_rel + M_PI;
     //     }
 
     //     else if (driving_dir == 'S'){
-    //         ynew = sensS.intersection[1] - offset;
-    //         rob_pos[1] = (1-smoothing) * rob_pos[1] + smoothing * ynew;
-    //         rob_dir = (1-smoothing) * rob_dir + smoothing * (angle_rel - M_PI);
+    //         temp_rob_pos[0] += rob_pos[0];
+    //         temp_rob_pos[1] += sensS.intersection[1] - height;
+    //         temp_rob_dir += angle_rel + M_PI;
     //     }
 
     //     else if (driving_dir == 'W'){
-    //         xnew = sensS.intersection[0] + offset;
-    //         rob_pos[0] = (1-smoothing) * rob_pos[0] + smoothing * xnew;
-    //         rob_dir = (1-smoothing) * rob_dir + smoothing * (angle_rel - M_PI/2);
+    //         temp_rob_pos[0] += sensS.intersection[0] + height;
+    //         temp_rob_pos[1] += rob_pos[1];
+    //         temp_rob_dir += angle_rel + M_PI;
     //     }
 
-    //     else if (driving_dir == 'E') {12
-    //         xnew = sensS.intersection[0] - offset;
-    //         rob_pos[0] = (1-smoothing) * rob_pos[0] + smoothing * xnew;
-    //         rob_dir = (1-smoothing) * rob_dir + smoothing * (angle_rel - 3*M_PI/2);
+    //     else if (driving_dir == 'E') {
+    //         temp_rob_pos[0] += sensS.intersection[0] - height;
+    //         temp_rob_pos[1] += rob_pos[1];
+    //         temp_rob_dir += angle_rel + M_PI;
     //     }
     // }
-
-    rob_dir = fmod(rob_dir, 2*M_PI);
-    if (rob_dir < 0) {
-        rob_dir += 2*M_PI;
-    }
-
-
-    // cout << "wall_same: " << ((sensR2.looking_at == sensR.looking_at) && sensR2.looking_at != '0') << endl;
 
     // 4 & 5
     if ((sensR2.looking_at == sensR.looking_at) && sensR2.looking_at != '0'){
         performed_update = true;
-        get_offset_right(offset, angle_rel, M_PI/4, -M_PI/2);
+        get_offset_right(height, angle_rel, M_PI/4, -M_PI/2);
         // # updating
-        if((offset != offset) || (angle_rel != angle_rel)){
-            cout << "NAN found!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+        if((height != height) || (angle_rel != angle_rel)){
+            cout << "NAN found!" << endl;
             return;
         }
+
         rob_dir = fmod(rob_dir, 2*M_PI);
         if (rob_dir < 0) {
             rob_dir += 2*M_PI;
         }
-        cout << "before: " << rob_dir << endl;
         if (driving_dir == 'N'){
-            xnew = sensR2.intersection[0] - offset;
-            rob_pos[0] = (1-smoothing) * rob_pos[0] + smoothing * xnew;
-
-            rob_dir = (1-smoothing) * rob_dir + smoothing * angle_rel;
-            // cout << "sensR: " << sensR.looking_at << "   sensR2: " << sensR2.looking_at << endl;
+                    num_updates += 1;
+            temp_rob_pos[0] += sensR2.intersection[0] - height;
+            temp_rob_pos[1] += rob_pos[1];
+            temp_rob_dir += angle_rel + M_PI;
             // cout << "Wall to the right while moving North" << endl;
 
         } else if (driving_dir == 'S') {
-            xnew = sensR2.intersection[0] + offset;
-            rob_pos[0] = ((1-smoothing) * rob_pos[0] + smoothing * xnew);
-            rob_dir = (1-smoothing) * rob_dir + smoothing * (angle_rel - M_PI);
+                    num_updates += 1;
+            temp_rob_pos[0] += sensR2.intersection[0] + height;
+            temp_rob_pos[1] += rob_pos[1];
+            temp_rob_dir += angle_rel + M_PI;
+            // cout << "Wall to the right while moving South" << endl;
 
-            cout << "Wall to the right while moving South" << endl;
+        // } else if (driving_dir == 'W') {
+        //     temp_rob_pos[0] += rob_pos[0];
+        //     temp_rob_pos[1] += sensR2.intersection[1] + height;
+        //     temp_rob_dir += angle_rel + M_PI;
+        //     // cout << "Wall to the right while moving West" << endl;
 
-        } else if (driving_dir == 'W') {
-            ynew = sensR2.intersection[1] + offset;
-            rob_pos[1] = ((1-smoothing) * rob_pos[1] + smoothing * ynew);
-            // cout << "before: " << rob_dir << endl;
-            rob_dir = (1-smoothing) * rob_dir + smoothing * (angle_rel + 3*M_PI/2);
-            // cout << "after: " << rob_dir << "   sR: " << sensR.dist_measure << "   sR2: " << sensR2.dist_measure << endl;
+        // } else if (driving_dir == 'E') {
+        //     temp_rob_pos[0] += rob_pos[0];
+        //     temp_rob_pos[1] += sensR2.intersection[1] - height;
+        //     temp_rob_dir += angle_rel + M_PI;
+        //     // cout << "Wall to the right while moving East" << endl;
+        }  
+    }
 
-            // cout << "Wall to the right while moving West" << endl;
-
-        } else if (driving_dir == 'E') {
-            ynew = sensR2.intersection[1] - offset;
-            rob_pos[1] = ((1-smoothing) * rob_pos[1] + smoothing * ynew);
-            rob_dir = (1-smoothing) * rob_dir + smoothing * (angle_rel + M_PI/2);
-
-            // cout << "Wall to the right while moving East" << endl;
-        }
+    if (num_updates >= 1){ 
+        rob_pos[0] = temp_rob_pos[0]/num_updates;
+        rob_pos[1] = temp_rob_pos[1]/num_updates;
+        rob_dir = round(rob_dir/M_PI_2)*M_PI_2 + ((temp_rob_dir/num_updates)-M_PI);
 
         rob_dir = fmod(rob_dir, 2*M_PI);
         if (rob_dir < 0) {
             rob_dir += 2*M_PI;
-        }   
-        cout << "after: " << rob_dir << endl;
+        }
     }
+
+    if (sensS.looking_at == 'N') {
+        // rob_pos[0] = sensS.intersection[0] + sin(3*M_PI_2 - sensS.sens_dir) * sensS.dist_measure;
+        rob_pos[1] = sensS.intersection[1] + cos(3*M_PI_2 - sensS.sens_dir) * (sensS.dist_measure + sensS.offset_position);
+    }
+
+
+    // if (labyrinth[cell_column][cell_row].has_wall(looking_at)){
+    //     rob_pos[1] = POS_RETAIN*rob_pos[1] + (1-POS_RETAIN)*(intersection[1] - cos(sens_dir)*dist_measure);
+    // }
 }
 
-// void RobotEst::estimatePos(Sensor sens1, Sensor sens2, Sensor sens3, Sensor sens4, Sensor sens5, float alpha) {
-//     // get the length L of the wall segment 2 sensors are looking at
-//     float L = sqrt( pow(-sens2.dist_measure * cos(alpha) + sens1.dist_measure, 2) + pow(sens2.dist_measure*sin(alpha), 2));
-//     // Heron's Formula to get Area based on side lengths only
-//     float s = sens1.dist_measure + sens2.dist_measure + L;
-//     // Calculate Area
-//     float A = sqrt( s * (s-sens1.dist_measure) * (s-sens2.dist_measure) * (s-L) );
-//     // use regular A = 1/2 * L * h
-//     float h = (2*A)/L;
 
-//     //calculate theta
-//     float gamma = acos(h/sens1.dist_measure);
-//     float theta = 90 - gamma;
-//     return h, theta;
-// }
 
 void RobotEst::updatePosition(float speedLeft_, float speedRight_) {
     float deltaTime = 1; //Param?
