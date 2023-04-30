@@ -9,6 +9,9 @@
 
 #define _USE_MATH_DEFINES
 
+float SPEED_VAR = 0.05;
+float SENS_VAR = 5;
+
 // use array<float, 2> instead of vector for efficiency?
 
 Corner::Corner() {}
@@ -220,7 +223,7 @@ void Sensor::getDistanceToWall(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]
         }
     }
 
-    dist_measure = shortest_dist_measure + gaussianNoise(0, 0);
+    dist_measure = shortest_dist_measure + gaussianNoise(0, SENS_VAR);
 }
 
 
@@ -240,9 +243,11 @@ Robot::Robot(float x, float y, float direction_, float distance_wheels_, float w
     sensL.init(rob_pos, rob_dir, -M_PI/2, width/2);
 }
 
-void Robot::updatePosition(float speedLeft, float speedRight) {
+void Robot::updatePosition(float speedLeft_, float speedRight_) {
     float deltaTime = 1; //Param?
     float wheelRadius = 1;
+    float speedLeft = speedLeft_ + gaussianNoise(0, SPEED_VAR);
+    float speedRight = speedRight_ + + gaussianNoise(0, SPEED_VAR);
     // Calculate the new position of the robot
     float speed = wheelRadius * (speedLeft + speedRight) / 2;
     float angularVelocity = wheelRadius * (speedLeft - speedRight) / distance_wheels;

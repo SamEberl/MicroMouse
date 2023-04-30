@@ -90,7 +90,7 @@ class RobotEst {
         void get_offset_right(float& offset, float& theta_rel, float alpha, float beta);
         void get_offset_front_left(float& offset, float& theta_rel, float alpha);
         void get_offset_front_right(float& offset, float& theta_rel, float alpha);
-        void horizontal_dist_to_west_wall(float error_band, float smoothing);
+        void localization(float error_band, float smoothing);
 
 };
 

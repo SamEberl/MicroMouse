@@ -6,6 +6,7 @@
 #include "defs.h"
 #include "utils.h"
 #include "estimations.h"
+#include "algorithm.h"
 
 using namespace std;
 
@@ -39,12 +40,14 @@ int main(int argc, char *argv[]) {
   generate_custom_labyrinth(labyrinth, corners);
   print_labyrinth(labyrinth);
   mouse.measureDistances(labyrinth, corners);
+
   RobotEst mouseEst = RobotEst(rob_x, rob_y, rob_dir, DISTANCE_WHEELS, MOUSE_WIDTH, MOUSE_HEIGHT);
   CellEst labyrinthEst[LABYRINTH_WIDTH][LABYRINTH_HEIGHT];
   CornerEst cornersEst[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1];
   init_labyrinth(labyrinthEst);
   init_corners(cornersEst);
 
+  PIDController controller = PIDController(0.7, 0.1, 0.1, 2.0, -2.0);
 
   bool running = true;
   while (running) {
@@ -80,30 +83,34 @@ int main(int argc, char *argv[]) {
     // }
 
 
-    if (mouse.sensS.dist_measure < SENSOR_RANGE*2/5) {
-      mouse.updatePosition(-2.5, 2.5);
-    } else if (mouse.sensR2.dist_measure < SENSOR_RANGE*2/5) {
-      mouse.updatePosition(-2.5, 2.5);
-    } else {
-      mouse.updatePosition(2.5, 2.5);
-    }
+    // if (mouse.sensS.dist_measure < SENSOR_RANGE*2/5) {
+    //   mouse.updatePosition(-2.5, 2.5);
+    // } else if (mouse.sensR2.dist_measure < SENSOR_RANGE*2/5) {
+    //   mouse.updatePosition(-2.5, 2.5);
+    // } else {
+    //   mouse.updatePosition(2.5, 2.5);
+    // }
 
-    if (mouseEst.sensS.dist_measure < SENSOR_RANGE*2/5) {
-      mouseEst.updatePosition(-2.5, 2.5);
-    } else if (mouseEst.sensR2.dist_measure < SENSOR_RANGE*2/5) {
-      mouseEst.updatePosition(-2.5, 2.5);
-    } else {
-      mouseEst.updatePosition(2.5, 2.5);
-    }
+    // if (mouseEst.sensS.dist_measure < SENSOR_RANGE*2/5) {
+    //   mouseEst.updatePosition(-2.5, 2.5);
+    // } else if (mouseEst.sensR2.dist_measure < SENSOR_RANGE*2/5) {
+    //   mouseEst.updatePosition(-2.5, 2.5);
+    // } else {
+    //   mouseEst.updatePosition(2.5, 2.5);
+    // }
 
-    // mouse.updatePosition(-0.005, 0.005);
-    // mouseEst.updatePosition(-0.005, 0.005);
+    // mouse.updatePosition(-0.05, 0.05);
+    // mouseEst.updatePosition(-0.05, 0.05);
     // mouse.updatePosition(-0.5, 0.5);
     // mouseEst.updatePosition(-0.5, 0.5);
 
+    float driveDiff = controller.calculate(3*M_PI_2, mouseEst.rob_dir, 1);
+    mouse.updatePosition(0.3 + driveDiff, 0.3 - driveDiff);
+    mouseEst.updatePosition(0.3 + driveDiff, 0.3 - driveDiff);
+
     mouse.measureDistances(labyrinth, corners);
     mouseEst.compareDistances(renderer, mouse, labyrinthEst, cornersEst);
-    mouseEst.horizontal_dist_to_west_wall(M_PI/6, 1);
+    mouseEst.localization(M_PI/6, 0.05);
 
     SDL_RenderPresent(renderer);
   }
