@@ -110,11 +110,10 @@ void drawSensor(SDL_Renderer *renderer, SensorEst sensor){
                         y + sin(sensor.sens_dir)*sensor.dist_measure);
 }
 
-void drawLabyrinth(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]){
+void drawLabyrinth(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], Corner corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]){
     vector<float> p1(2), p2(2), p3(2), p4(2);
 
-    for (int i = 0; i < LABYRINTH_WIDTH; i += 1)
-    {
+    for (int i = 0; i < LABYRINTH_WIDTH; i += 1){
         for (int j = 0; j < LABYRINTH_HEIGHT; j += 1){
             p1 = labyrinth[i][j].get_point('1');
             p2 = labyrinth[i][j].get_point('2');
@@ -144,6 +143,20 @@ void drawLabyrinth(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYR
                 SDL_SetRenderDrawColor(renderer, 130, 130, 255, 128);
                 SDL_RenderDrawLine(renderer, p1[0], p1[1], p4[0], p4[1]);
             }
+        }
+    }
+    // Draw the corners
+    for (int i = 0; i < LABYRINTH_WIDTH+1; i += 1){
+        for (int j = 0; j < LABYRINTH_HEIGHT+1; j += 1){
+            p1 = corners[i][j].get_point('1');
+            p2 = corners[i][j].get_point('2');
+            p3 = corners[i][j].get_point('3');
+            p4 = corners[i][j].get_point('4');
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 128);
+            SDL_RenderDrawLine(renderer, p1[0], p1[1], p2[0], p2[1]);
+            SDL_RenderDrawLine(renderer, p2[0], p2[1], p3[0], p3[1]);
+            SDL_RenderDrawLine(renderer, p4[0], p4[1], p3[0], p3[1]);
+            SDL_RenderDrawLine(renderer, p1[0], p1[1], p4[0], p4[1]);
         }
     }
 }

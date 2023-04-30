@@ -14,19 +14,60 @@ using namespace std;
 
 float WALL_RETAIN = 0.99;
 float POS_RETAIN = 0.999;
-float SPEED_VAR = 0.15;
+float SPEED_VAR = 0.02;
+
+CornerEst::CornerEst() {}
+void CornerEst::initialize(float row_, float col_) {
+    row = row_;
+    col = col_;
+    float x_pos = col * (CELL_SIZE + WALL_WIDTH);
+    float y_pos = row * (CELL_SIZE + WALL_WIDTH);
+    // Points start in top left corner of cell and go clockwise
+    this->p1 = {x_pos, y_pos};
+    this->p2 = {(x_pos+WALL_WIDTH), y_pos};
+    this->p3 = {(x_pos+WALL_WIDTH), (y_pos+WALL_WIDTH)};
+    this->p4 = {x_pos, (y_pos+WALL_WIDTH)};
+}
+int CornerEst::get_row() const {return row;};
+int CornerEst::get_col() const {return col;};
+vector<float> CornerEst::get_point(char pointNumber) const {
+    switch (pointNumber) {
+        case '1':
+            return p1;
+        case '2':
+            return p2;
+        case '3':
+            return p3;
+        case '4':
+            return p4;
+        default:
+            throw invalid_argument("Invalid point number");
+    }
+}
 
 CellEst::CellEst() : N(0.5), E(0.5), S(0.5), W(0.5), seen(false) {}
 void CellEst::initialize(float row_, float col_) {
     row = row_;
     col = col_;
-    float x_pos = col * CELL_SIZE;
-    float y_pos = row * CELL_SIZE;
+    float x_pos = col * (CELL_SIZE + WALL_WIDTH) + WALL_WIDTH;
+    float y_pos = row * (CELL_SIZE + WALL_WIDTH) + WALL_WIDTH;
     // Points start in top left corner of cell and go clockwise
     this->p1 = {x_pos, y_pos};
     this->p2 = {(x_pos+CELL_SIZE), y_pos};
     this->p3 = {(x_pos+CELL_SIZE), (y_pos+CELL_SIZE)};
     this->p4 = {x_pos, (y_pos+CELL_SIZE)};
+    if (row == 0) {
+        N = 1.0;
+    }
+    if (col == LABYRINTH_WIDTH-1) {
+        E = 1.0;
+    }
+    if (row == LABYRINTH_HEIGHT-1) {
+        S = 1.0;
+    }
+    if (col == 0) {
+        W = 1.0;
+    }
 }
 int CellEst::get_row() const {return row;};
 int CellEst::get_col() const {return col;};
@@ -47,7 +88,7 @@ vector<float> CellEst::get_point(char pointNumber) const {
 }
 
 bool CellEst::has_wall(char direction) const {
-    float threshold = 0.51;
+    float threshold = 0.55;
     switch (direction) {
         case 'N':
             if (N > threshold) {return true;}
@@ -103,7 +144,6 @@ void SensorEst::init(vector<float> robot_pos, float robot_dir, float offset_dire
     offset_position = offset_position_;
     sens_pos[0] = robot_pos[0] + cos(sens_dir)*offset_position;
     sens_pos[1] = robot_pos[1] + sin(sens_dir)*offset_position;
-    // TODO set probability for outer walls to 1
 }
 
 void SensorEst::updatePosition(vector<float> robot_pos, float robot_dir) {
@@ -117,14 +157,14 @@ void SensorEst::getDistanceToWall(Sensor sensor) {
     dist_measure = sensor.dist_measure;
 }
 
-void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob_pos, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
+void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob_pos, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], CornerEst corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]) {
     // Function to see if an intersection was expected and if yes to update the belief about a wall being there.
     looking_at = '0';
     intersection = {-1.0, -1.0};
     // float min_corner_dist = CELL_SIZE / 20;
-    float min_corner_dist = 5;
-    float tolerance_dist = 5;
-    float ignore_max = 6;
+    float min_corner_dist = 10;
+    float tolerance_dist = 10;
+    float ignore_max = 10;
     float shortest_dist_measure = SENSOR_RANGE;
     float temp_dist_measure = SENSOR_RANGE;
     int cell_column = -1;
@@ -162,8 +202,8 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                     } 
                 } else if (dist_measure > (temp_dist_measure + tolerance_dist)) {
                     labyrinth[i][j].update_wall('N', false);
-                    if (j-1 >= 0){
-                        labyrinth[i][j-1].update_wall('S', false);
+                    if (i-1 >= 0){
+                        labyrinth[i-1][j].update_wall('S', false);
                     }
                 }
             }
@@ -187,8 +227,8 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                     } 
                 } else if (dist_measure > (temp_dist_measure + tolerance_dist)) {
                     labyrinth[i][j].update_wall('E', false);
-                    if (i+1 < LABYRINTH_WIDTH){
-                        labyrinth[i+1][j].update_wall('W', false);
+                    if (j+1 < LABYRINTH_WIDTH){
+                        labyrinth[i][j+1].update_wall('W', false);
                     }
                 }
             }
@@ -212,8 +252,8 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                     } 
                 } else if (dist_measure > (temp_dist_measure + tolerance_dist)) {
                     labyrinth[i][j].update_wall('S', false);
-                    if (j+1 < LABYRINTH_HEIGHT){
-                        labyrinth[i][j+1].update_wall('S', false);
+                    if (i+1 < LABYRINTH_HEIGHT){
+                        labyrinth[i+1][j].update_wall('N', false);
                     }
                 }
             }
@@ -237,15 +277,104 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                     } 
                 } else if (dist_measure > (temp_dist_measure + tolerance_dist)) {
                     labyrinth[i][j].update_wall('W', false);
-                    if (i-1 >= 0){
-                        labyrinth[i-1][j].update_wall('E', false);
+                    if (j-1 >= 0){
+                        labyrinth[i][j-1].update_wall('E', false);
                     }
                 }
             }
         }
     }
+
+    // Check intersection with corners
+    for (int i = 0; i < LABYRINTH_WIDTH+1; i += 1){
+        for (int j = 0; j < LABYRINTH_HEIGHT+1; j += 1){
+            wall_start = corners[i][j].get_point('1');
+            wall_end = corners[i][j].get_point('2');
+            temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
+            if (intersection_found){
+                if (abs(dist_measure-temp_dist_measure) < tolerance_dist){
+                    if (shortest_dist_measure > temp_dist_measure) {
+                        shortest_dist_measure = temp_dist_measure;
+
+                        looking_at = '0';
+                        cell_column = -1;
+                        cell_row = -1;
+                        intersection = temp_intersection;
+                    }
+                }
+            }
+            wall_start = corners[i][j].get_point('2');
+            wall_end = corners[i][j].get_point('3');
+            temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
+            if (intersection_found){
+                if (abs(dist_measure-temp_dist_measure) < tolerance_dist){
+                    if (shortest_dist_measure > temp_dist_measure) {
+                        shortest_dist_measure = temp_dist_measure;
+
+                        looking_at = '0';
+                        cell_column = -1;
+                        cell_row = -1;
+                        intersection = temp_intersection;
+                    }
+                }
+            }
+            wall_start = corners[i][j].get_point('3');
+            wall_end = corners[i][j].get_point('4');
+            temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
+            if (intersection_found){
+                if (abs(dist_measure-temp_dist_measure) < tolerance_dist){
+                    if (shortest_dist_measure > temp_dist_measure) {
+                        shortest_dist_measure = temp_dist_measure;
+
+                        looking_at = '0';
+                        cell_column = -1;
+                        cell_row = -1;
+                        intersection = temp_intersection;
+                    }
+                }
+            }
+            wall_start = corners[i][j].get_point('4');
+            wall_end = corners[i][j].get_point('1');
+            temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
+            if (intersection_found){
+                if (abs(dist_measure-temp_dist_measure) < tolerance_dist){
+                    if (shortest_dist_measure > temp_dist_measure) {
+                        shortest_dist_measure = temp_dist_measure;
+
+                        looking_at = '0';
+                        cell_column = -1;
+                        cell_row = -1;
+                        intersection = temp_intersection;
+                    }
+                }
+            }
+        }
+    }
+
+    // cout << "intersection: " << intersection[0] << ", " << intersection[1] << endl;
+
     if (looking_at != '0') {
         labyrinth[cell_column][cell_row].update_wall(looking_at, true); //TODO update opposite wall as well
+        if (looking_at == 'N') {
+            if ((cell_column-1) >= 0) {
+                labyrinth[cell_column-1][cell_row].update_wall('S', true);
+            }
+        }
+        if (looking_at == 'E') {
+            if ((cell_row+1) < LABYRINTH_WIDTH) {
+                labyrinth[cell_column][cell_row+1].update_wall('W', true);
+            }
+        }
+        if (looking_at == 'S') {
+            if ((cell_column+1) < LABYRINTH_HEIGHT) {
+                labyrinth[cell_column+1][cell_row].update_wall('N', true);
+            }
+        }
+        if (looking_at == 'W') {
+            if ((cell_row-1) >= 0) {
+                labyrinth[cell_column][cell_row-1].update_wall('E', true);
+            }
+        }
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 128);
         SDL_RenderDrawLine(renderer, p1, p2, p3, p4);
     }
@@ -371,109 +500,109 @@ void RobotEst::horizontal_dist_to_west_wall(float error_band=M_PI/6, float smoot
     }
 
     // 1 & 2
-    // if ((sensL.looking_at == sensL2.looking_at) && sensL.looking_at != '0') {
-    //     performed_update = true;
-    //     get_offset_left(height, angle_rel, M_PI/4, M_PI/2);
-    //     // # updating
-    //     if((height != height) || (angle_rel != angle_rel)){
-    //         cout << "NAN found!" << endl;
-    //     }
-    //     num_updates += 1;
-    //     if (driving_dir == 'N'){
-    //         temp_rob_pos[0] += sensL.intersection[0] + height;
-    //         temp_rob_pos[1] += rob_pos[1];
-    //         temp_rob_dir += angle_rel + M_PI;
-    //         // cout << "Wall to the left while moving North" << endl;
-    //     }
+    if ((sensL.looking_at == sensL2.looking_at) && sensL.looking_at != '0') {
+        performed_update = true;
+        get_offset_left(height, angle_rel, M_PI/4, M_PI/2);
+        // # updating
+        if((height != height) || (angle_rel != angle_rel)){
+            cout << "NAN found!" << endl;
+        }
+        num_updates += 1;
+        if (driving_dir == 'N'){
+            temp_rob_pos[0] += sensL.intersection[0] + height;
+            temp_rob_pos[1] += rob_pos[1];
+            temp_rob_dir += angle_rel + M_PI;
+            // cout << "Wall to the left while moving North" << endl;
+        }
 
-    //     else if (driving_dir == 'S'){
-    //         temp_rob_pos[0] += sensL.intersection[0] - height;
-    //         temp_rob_pos[1] += rob_pos[1];
-    //         temp_rob_dir += angle_rel + M_PI;
-    //         // cout << "Wall to the left while moving South" << endl;
-    //     }
+        else if (driving_dir == 'S'){
+            temp_rob_pos[0] += sensL.intersection[0] - height;
+            temp_rob_pos[1] += rob_pos[1];
+            temp_rob_dir += angle_rel + M_PI;
+            // cout << "Wall to the left while moving South" << endl;
+        }
 
-    //     else if (driving_dir == 'W'){
-    //         temp_rob_pos[0] += rob_pos[0];
-    //         temp_rob_pos[1] += sensL.intersection[1] - height;
-    //         temp_rob_dir += angle_rel + M_PI;
-    //         // cout << "Wall to the left while moving West" << endl; 
-    //     }
-    //     else if (driving_dir == 'E') {
-    //         temp_rob_pos[0] += rob_pos[0];
-    //         temp_rob_pos[1] += sensL.intersection[1] + height;
-    //         temp_rob_dir += angle_rel + M_PI;
-    //         // cout << "Wall to the left while moving East" << endl;
-    //     }
-    // }
+        else if (driving_dir == 'W'){
+            temp_rob_pos[0] += rob_pos[0];
+            temp_rob_pos[1] += sensL.intersection[1] - height;
+            temp_rob_dir += angle_rel + M_PI;
+            // cout << "Wall to the left while moving West" << endl; 
+        }
+        else if (driving_dir == 'E') {
+            temp_rob_pos[0] += rob_pos[0];
+            temp_rob_pos[1] += sensL.intersection[1] + height;
+            temp_rob_dir += angle_rel + M_PI;
+            // cout << "Wall to the left while moving East" << endl;
+        }
+    }
 
-    // // 2 & 3
-    // if ((sensL2.looking_at == sensS.looking_at) && sensL2.looking_at != '0') {
-    //     performed_update = true;
-    //     get_offset_front_left(height, angle_rel, M_PI/4);
-    //     // # updating
-    //     if((height != height) || (angle_rel != angle_rel)){
-    //         cout << "NAN found!" << endl;
-    //     }
-    //     num_updates += 1;
-    //     if (driving_dir == 'N'){
-    //         temp_rob_pos[0] += rob_pos[0];
-    //         temp_rob_pos[1] += sensS.intersection[1] + height;
-    //         temp_rob_dir += angle_rel + M_PI;
-    //     }
+    // 2 & 3
+    if ((sensL2.looking_at == sensS.looking_at) && sensL2.looking_at != '0') {
+        performed_update = true;
+        get_offset_front_left(height, angle_rel, M_PI/4);
+        // # updating
+        if((height != height) || (angle_rel != angle_rel)){
+            cout << "NAN found!" << endl;
+        }
+        num_updates += 1;
+        if (driving_dir == 'N'){
+            temp_rob_pos[0] += rob_pos[0];
+            temp_rob_pos[1] += sensS.intersection[1] + height;
+            temp_rob_dir += angle_rel + M_PI;
+        }
 
-    //     else if (driving_dir == 'S'){
-    //         temp_rob_pos[0] += rob_pos[0];
-    //         temp_rob_pos[1] += sensS.intersection[1] - height;
-    //         temp_rob_dir += angle_rel + M_PI;
-    //     }
+        else if (driving_dir == 'S'){
+            temp_rob_pos[0] += rob_pos[0];
+            temp_rob_pos[1] += sensS.intersection[1] - height;
+            temp_rob_dir += angle_rel + M_PI;
+        }
 
-    //     else if (driving_dir == 'W'){
-    //         temp_rob_pos[0] += sensS.intersection[0] + height;
-    //         temp_rob_pos[1] += rob_pos[1];
-    //         temp_rob_dir += angle_rel + M_PI;
-    //     }
+        else if (driving_dir == 'W'){
+            temp_rob_pos[0] += sensS.intersection[0] + height;
+            temp_rob_pos[1] += rob_pos[1];
+            temp_rob_dir += angle_rel + M_PI;
+        }
 
-    //     else if (driving_dir == 'E') {
-    //         temp_rob_pos[0] += sensS.intersection[0] - height;
-    //         temp_rob_pos[1] += rob_pos[1];
-    //         temp_rob_dir += angle_rel + M_PI;
-    //     }
-    // }
+        else if (driving_dir == 'E') {
+            temp_rob_pos[0] += sensS.intersection[0] - height;
+            temp_rob_pos[1] += rob_pos[1];
+            temp_rob_dir += angle_rel + M_PI;
+        }
+    }
 
-    // // // 3 & 4
-    // if (sensS.looking_at == sensR2.looking_at && sensS.looking_at != '0') {
-    //     performed_update = true;
-    //     get_offset_front_right(height, angle_rel, M_PI/4);
-    //     // # updating
-    //     if((height != height) || (angle_rel != angle_rel)){
-    //         cout << "NAN found!" << endl;
-    //     }
-    //     num_updates += 1;
-    //     if (driving_dir == 'N'){
-    //         temp_rob_pos[0] += rob_pos[0];
-    //         temp_rob_pos[1] += sensS.intersection[1] + height;
-    //         temp_rob_dir += angle_rel + M_PI;
-    //     }
+    // // 3 & 4
+    if (sensS.looking_at == sensR2.looking_at && sensS.looking_at != '0') {
+        performed_update = true;
+        get_offset_front_right(height, angle_rel, M_PI/4);
+        // # updating
+        if((height != height) || (angle_rel != angle_rel)){
+            cout << "NAN found!" << endl;
+        }
+        num_updates += 1;
+        if (driving_dir == 'N'){
+            temp_rob_pos[0] += rob_pos[0];
+            temp_rob_pos[1] += sensS.intersection[1] + height;
+            temp_rob_dir += angle_rel + M_PI;
+        }
 
-    //     else if (driving_dir == 'S'){
-    //         temp_rob_pos[0] += rob_pos[0];
-    //         temp_rob_pos[1] += sensS.intersection[1] - height;
-    //         temp_rob_dir += angle_rel + M_PI;
-    //     }
+        else if (driving_dir == 'S'){
+            temp_rob_pos[0] += rob_pos[0];
+            temp_rob_pos[1] += sensS.intersection[1] - height;
+            temp_rob_dir += angle_rel + M_PI;
+        }
 
-    //     else if (driving_dir == 'W'){
-    //         temp_rob_pos[0] += sensS.intersection[0] + height;
-    //         temp_rob_pos[1] += rob_pos[1];
-    //         temp_rob_dir += angle_rel + M_PI;
-    //     }
+        else if (driving_dir == 'W'){
+            temp_rob_pos[0] += sensS.intersection[0] + height;
+            temp_rob_pos[1] += rob_pos[1];
+            temp_rob_dir += angle_rel + M_PI;
+        }
 
-    //     else if (driving_dir == 'E') {
-    //         temp_rob_pos[0] += sensS.intersection[0] - height;
-    //         temp_rob_pos[1] += rob_pos[1];
-    //         temp_rob_dir += angle_rel + M_PI;
-    //     }
-    // }
+        else if (driving_dir == 'E') {
+            temp_rob_pos[0] += sensS.intersection[0] - height;
+            temp_rob_pos[1] += rob_pos[1];
+            temp_rob_dir += angle_rel + M_PI;
+        }
+    }
 
     // 4 & 5
     if ((sensR2.looking_at == sensR.looking_at) && sensR2.looking_at != '0'){
@@ -517,9 +646,11 @@ void RobotEst::horizontal_dist_to_west_wall(float error_band=M_PI/6, float smoot
         }  
     }
 
-    if (num_updates >= 1){ 
+    if (num_updates >= 1){
+        // cout << "before: " << rob_pos[0] << ", " << rob_pos[1] << endl;
         rob_pos[0] = temp_rob_pos[0]/num_updates;
         rob_pos[1] = temp_rob_pos[1]/num_updates;
+        // cout << "after: " << rob_pos[0] << ", " << rob_pos[1] << endl;
         rob_dir = round(rob_dir/M_PI_2)*M_PI_2 + ((temp_rob_dir/num_updates)-M_PI);
 
         rob_dir = fmod(rob_dir, 2*M_PI);
@@ -528,9 +659,25 @@ void RobotEst::horizontal_dist_to_west_wall(float error_band=M_PI/6, float smoot
         }
     }
 
+    // if (sensS.looking_at == 'N') {
+    //     // rob_pos[0] = sensS.intersection[0] + sin(3*M_PI_2 - sensS.sens_dir) * sensS.dist_measure;
+    //     rob_pos[1] = sensS.intersection[1] + cos(3*M_PI_2 - sensS.sens_dir) * (sensS.dist_measure + sensS.offset_position);
+    // }
+
+    float S = (sensS.dist_measure + sensS.offset_position) * cos(sensS.sens_dir - round(sensS.sens_dir/M_PI_2)*M_PI_2);
+    if (S < 0){
+        cout << "S is smaller than 0 !!!!!!" << endl;
+    }
+
+    // cos(fmod(sensS.sens_dir, M_PI_4));
     if (sensS.looking_at == 'N') {
-        // rob_pos[0] = sensS.intersection[0] + sin(3*M_PI_2 - sensS.sens_dir) * sensS.dist_measure;
-        rob_pos[1] = sensS.intersection[1] + cos(3*M_PI_2 - sensS.sens_dir) * (sensS.dist_measure + sensS.offset_position);
+        rob_pos[1] = sensS.intersection[1] + S;
+    } else if (sensS.looking_at == 'E') {
+        rob_pos[0] = sensS.intersection[0] - S;
+    } else if (sensS.looking_at == 'S') {
+        rob_pos[1] = sensS.intersection[1] - S;
+    } else if (sensS.looking_at == 'W') {
+        rob_pos[0] = sensS.intersection[0] + S;
     }
 
 
@@ -568,16 +715,16 @@ void RobotEst::updatePosition(float speedLeft_, float speedRight_) {
     // cout << sensR.looking_at << " " << sensR.intersection[0] << "," << sensR.intersection[1] << endl;
 }
 
-void RobotEst::compareDistances(SDL_Renderer *renderer, Robot mouse, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
+void RobotEst::compareDistances(SDL_Renderer *renderer, Robot mouse, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], CornerEst corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]) {
     sensR.getDistanceToWall(mouse.sensR);
     sensR2.getDistanceToWall(mouse.sensR2);
     sensS.getDistanceToWall(mouse.sensS);
     sensL2.getDistanceToWall(mouse.sensL2);
     sensL.getDistanceToWall(mouse.sensL);
 
-    sensR.compareDistanceToWall(renderer, rob_pos, labyrinth);
-    sensR2.compareDistanceToWall(renderer, rob_pos, labyrinth);
-    sensS.compareDistanceToWall(renderer, rob_pos, labyrinth);
-    sensL2.compareDistanceToWall(renderer, rob_pos, labyrinth);
-    sensL.compareDistanceToWall(renderer, rob_pos, labyrinth);
+    sensR.compareDistanceToWall(renderer, rob_pos, labyrinth, corners);
+    sensR2.compareDistanceToWall(renderer, rob_pos, labyrinth, corners);
+    sensS.compareDistanceToWall(renderer, rob_pos, labyrinth, corners);
+    sensL2.compareDistanceToWall(renderer, rob_pos, labyrinth, corners);
+    sensL.compareDistanceToWall(renderer, rob_pos, labyrinth, corners);
 }

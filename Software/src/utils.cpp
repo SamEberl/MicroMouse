@@ -52,13 +52,31 @@ void init_labyrinth(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
     for (int i = 0; i < LABYRINTH_WIDTH; i++) {
         for (int j = 0; j < LABYRINTH_HEIGHT; j++) {
             labyrinth[i][j].initialize(i, j);
+
+        }
+    }
+}
+
+void init_corners(Corner corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]) {
+    for (int i = 0; i < LABYRINTH_WIDTH+1; i++) {
+        for (int j = 0; j < LABYRINTH_HEIGHT+1; j++) {
+            corners[i][j].initialize(i, j);
+        }
+    }
+}
+
+void init_corners(CornerEst corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]) {
+    for (int i = 0; i < LABYRINTH_WIDTH+1; i++) {
+        for (int j = 0; j < LABYRINTH_HEIGHT+1; j++) {
+            corners[i][j].initialize(i, j);
         }
     }
 }
 
 // function to generate a random labyrinth using depth-first search algorithm
-void generate_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
+void generate_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], Corner corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]) {
     init_labyrinth(labyrinth);
+    init_corners(corners);
 
     stack<Cell*> stack;
     Cell* current = &labyrinth[0][0];
@@ -113,8 +131,9 @@ void generate_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
     }
 }
 
-void generate_custom_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
+void generate_custom_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], Corner corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]) {
     init_labyrinth(labyrinth);
+    init_corners(corners);
     // bool walls_E[6][6] = {  {true, true, true, true, 1, 1},
     //                         {true, true, true, true, 1, 1},
     //                         {true, true, true, true, 1, 1},

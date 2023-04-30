@@ -8,6 +8,23 @@
 
 using namespace std;
 
+class Corner {
+public:
+    Corner();
+    void initialize(float row, float col);
+    int get_row() const;
+    int get_col() const; 
+    vector<float> get_point(char pointNumber) const;
+
+private:
+    float row;
+    float col;
+    vector<float> p1;
+    vector<float> p2;
+    vector<float> p3;
+    vector<float> p4;
+};
+
 class Cell {
 public:
     Cell();
@@ -45,7 +62,7 @@ class Sensor {
         Sensor();
         void init(vector<float> robot_pos, float robot_dir, float offset_direction_, float offset_position_);
         void updatePosition(vector<float> robot_pos, float robot_dir);
-        void getDistanceToWall(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]);
+        void getDistanceToWall(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], Corner corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]);
 };
 
 class Robot {
@@ -64,7 +81,7 @@ class Robot {
 
         Robot(float x, float y, float direction_, float distance_wheels, float width, float height);
         void updatePosition(float SpeedL, float SpeedR);
-        void measureDistances(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]);
+        void measureDistances(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], Corner corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]);
 };
 
 #endif

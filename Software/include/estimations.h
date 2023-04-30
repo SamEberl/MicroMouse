@@ -9,6 +9,23 @@
 
 using namespace std;
 
+class CornerEst {
+public:
+    CornerEst();
+    void initialize(float row, float col);
+    int get_row() const;
+    int get_col() const; 
+    vector<float> get_point(char pointNumber) const;
+
+private:
+    float row;
+    float col;
+    vector<float> p1;
+    vector<float> p2;
+    vector<float> p3;
+    vector<float> p4;
+};
+
 class CellEst {
 public:
     CellEst();
@@ -20,13 +37,14 @@ public:
     void update_wall(char direction, bool wallPresent);
     bool is_seen() const;
     void set_seen(bool value);
+        float S;
 
 private:
     float row;
     float col;
     float N;
     float E;
-    float S;
+
     float W;
     bool seen;
     vector<float> p1;
@@ -49,7 +67,7 @@ class SensorEst {
         void init(vector<float> robot_pos, float robot_dir, float offset_direction_, float offset_position_);
         void updatePosition(vector<float> robot_pos, float robot_dir);
         void getDistanceToWall(Sensor sensor);
-        void compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob_pos, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]);
+        void compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob_pos, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], CornerEst corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]);
 };
 
 class RobotEst {
@@ -67,7 +85,7 @@ class RobotEst {
 
         RobotEst(float x, float y, float direction_, float distance_wheels, float width, float height);
         void updatePosition(float SpeedL, float SpeedR);
-        void compareDistances(SDL_Renderer *renderer, Robot mouse, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]);
+        void compareDistances(SDL_Renderer *renderer, Robot mouse, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], CornerEst corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]);
         void get_offset_left(float& offset, float& theta_rel, float alpha, float beta);
         void get_offset_right(float& offset, float& theta_rel, float alpha, float beta);
         void get_offset_front_left(float& offset, float& theta_rel, float alpha);

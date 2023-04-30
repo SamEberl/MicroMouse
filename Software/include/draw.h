@@ -16,7 +16,7 @@ void drawRobo(SDL_Renderer *renderer, Robot mouse);
 void drawRobo(SDL_Renderer *renderer, RobotEst mouse);
 void drawSensor(SDL_Renderer *renderer, Sensor sensor);
 void drawSensor(SDL_Renderer *renderer, SensorEst sensor);
-void drawLabyrinth(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]);
+void drawLabyrinth(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], Corner corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]);
 void drawLabyrinth(SDL_Renderer *renderer, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]);
 
 #endif
