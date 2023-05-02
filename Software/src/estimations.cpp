@@ -16,6 +16,14 @@ float WALL_RETAIN = 0.99;
 float POS_RETAIN = 0.999;
 float SENS_VAR = 5.0;
 float ENCODER_VAR = 0.1;
+float THRESHOLD_WALL_SEEN = 0.6;
+
+float MIN_CORNER_DIST = 20;
+float TOLERANCE_DIST = 15;
+float IGNORE_MAX = 20;
+
+float L_ERROR_BAND=M_PI/6;
+float L_SMOOTHING=0.1;
 
 CornerEst::CornerEst() {}
 void CornerEst::initialize(float row, float col) {
@@ -81,19 +89,18 @@ vector<float> CellEst::get_point(char pointNumber) const {
 }
 
 bool CellEst::has_wall(char direction) const {
-    float threshold_seen = 0.6;
     switch (direction) {
         case 'N':
-            if (N > threshold_seen) {return true;}
+            if (N > THRESHOLD_WALL_SEEN) {return true;}
             else {return false;}
         case 'E':
-            if (E > threshold_seen) {return true;}
+            if (E > THRESHOLD_WALL_SEEN) {return true;}
             else {return false;}
         case 'S':
-            if (S > threshold_seen) {return true;}
+            if (S > THRESHOLD_WALL_SEEN) {return true;}
             else {return false;}
         case 'W':
-            if (W > threshold_seen) {return true;}
+            if (W > THRESHOLD_WALL_SEEN) {return true;}
             else {return false;}
         default:
             return true;
@@ -116,27 +123,6 @@ void CellEst::update_wall(char direction, bool wallPresent) {
             break;
     }
 }
-
-// void CellEst::update_wall_seen(char direction) {
-//         switch (direction) {
-//         case 'N':
-//             if (N > threshold_seen) {this->seen = true;}
-//             else if (N < (1-threshold_seen)) {this->seen = true;}
-//             else {this->seen = false;}
-//             break;
-//         case 'E':
-//             if (E > threshold_seen) {this->seen = true;}
-//             else if (E < (1-threshold_seen)) {this->seen = true;}
-//             else {this->seen = false;}
-//             break;
-//         case 'S':
-//             S = WALL_RETAIN*S + (1-WALL_RETAIN)*wallPresent;
-//             break;
-//         case 'W':
-//             W = WALL_RETAIN*W + (1-WALL_RETAIN)*wallPresent;
-//             break;
-
-// }
 
 SensorEst::SensorEst() {
     looking_at = '0';
@@ -171,10 +157,6 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
     // Function to see if an intersection was expected and if yes to update the belief about a wall being there.
     looking_at = '0';
     intersection = {-1.0, -1.0};
-    // float min_corner_dist = CELL_SIZE / 20;
-    float min_corner_dist = 20;
-    float tolerance_dist = 20;
-    float ignore_max = 20;
     float shortest_dist_measure = SENSOR_RANGE;
     float temp_dist_measure = SENSOR_RANGE;
     int cell_column = -1;
@@ -196,11 +178,11 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
             wall_end = labyrinth[i][j].get_point('2');
             temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
             if (intersection_found) {
-                if (abs(dist_measure-temp_dist_measure) < tolerance_dist){
-                    if (dist_measure < (SENSOR_RANGE-ignore_max)){
-                        if (shortest_dist_measure > temp_dist_measure) {
-                            shortest_dist_measure = temp_dist_measure;
-                            if ((distBetweenPoints(temp_intersection, wall_start) > min_corner_dist) && (distBetweenPoints(temp_intersection, wall_end) > min_corner_dist)){
+                if (abs(dist_measure-temp_dist_measure) < TOLERANCE_DIST){
+                    if (dist_measure < (SENSOR_RANGE-IGNORE_MAX)){
+                        if (shortest_dist_measure > abs(dist_measure-temp_dist_measure)) {
+                            shortest_dist_measure = abs(dist_measure-temp_dist_measure);
+                            if ((distBetweenPoints(temp_intersection, wall_start) > MIN_CORNER_DIST) && (distBetweenPoints(temp_intersection, wall_end) > MIN_CORNER_DIST)){
                                 looking_at = 'N';
                                 cell_column = i;
                                 cell_row = j;
@@ -212,7 +194,7 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                             }
                         }
                     } 
-                } else if (dist_measure > (temp_dist_measure + tolerance_dist)) {
+                } else if (dist_measure > (temp_dist_measure + TOLERANCE_DIST)) {
                     labyrinth[i][j].update_wall('N', false);
                     if (i-1 >= 0){
                         labyrinth[i-1][j].update_wall('S', false);
@@ -223,11 +205,11 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
             wall_end = labyrinth[i][j].get_point('3');
             temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
             if (intersection_found) {
-                if (abs(dist_measure-temp_dist_measure) < tolerance_dist){
-                    if (dist_measure < (SENSOR_RANGE-ignore_max)){
-                        if (shortest_dist_measure > temp_dist_measure) {
-                            shortest_dist_measure = temp_dist_measure;
-                            if ((distBetweenPoints(temp_intersection, wall_start) > min_corner_dist) && (distBetweenPoints(temp_intersection, wall_end) > min_corner_dist)){
+                if (abs(dist_measure-temp_dist_measure) < TOLERANCE_DIST){
+                    if (dist_measure < (SENSOR_RANGE-IGNORE_MAX)){
+                        if (shortest_dist_measure > abs(dist_measure-temp_dist_measure)) {
+                            shortest_dist_measure = abs(dist_measure-temp_dist_measure);
+                            if ((distBetweenPoints(temp_intersection, wall_start) > MIN_CORNER_DIST) && (distBetweenPoints(temp_intersection, wall_end) > MIN_CORNER_DIST)){
                                 looking_at = 'E';
                                 cell_column = i;
                                 cell_row = j;
@@ -239,7 +221,7 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                             }
                         }
                     } 
-                } else if (dist_measure > (temp_dist_measure + tolerance_dist)) {
+                } else if (dist_measure > (temp_dist_measure + TOLERANCE_DIST)) {
                     labyrinth[i][j].update_wall('E', false);
                     if (j+1 < LABYRINTH_WIDTH){
                         labyrinth[i][j+1].update_wall('W', false);
@@ -250,11 +232,11 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
             wall_end = labyrinth[i][j].get_point('4');
             temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
             if (intersection_found) {   
-                if (abs(dist_measure-temp_dist_measure) < tolerance_dist){
-                    if (dist_measure < (SENSOR_RANGE-ignore_max)){
-                        if (shortest_dist_measure > temp_dist_measure) {
-                            shortest_dist_measure = temp_dist_measure;
-                            if ((distBetweenPoints(temp_intersection, wall_start) > min_corner_dist) && (distBetweenPoints(temp_intersection, wall_end) > min_corner_dist)){
+                if (abs(dist_measure-temp_dist_measure) < TOLERANCE_DIST){
+                    if (dist_measure < (SENSOR_RANGE-IGNORE_MAX)){
+                        if (shortest_dist_measure > abs(dist_measure-temp_dist_measure)) {
+                            shortest_dist_measure = abs(dist_measure-temp_dist_measure);
+                            if ((distBetweenPoints(temp_intersection, wall_start) > MIN_CORNER_DIST) && (distBetweenPoints(temp_intersection, wall_end) > MIN_CORNER_DIST)){
                                 looking_at = 'S';
                                 cell_column = i;
                                 cell_row = j;
@@ -266,7 +248,7 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                             }
                         }
                     } 
-                } else if (dist_measure > (temp_dist_measure + tolerance_dist)) {
+                } else if (dist_measure > (temp_dist_measure + TOLERANCE_DIST)) {
                     labyrinth[i][j].update_wall('S', false);
                     if (i+1 < LABYRINTH_HEIGHT){
                         labyrinth[i+1][j].update_wall('N', false);
@@ -277,11 +259,11 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
             wall_end = labyrinth[i][j].get_point('1');
             temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
             if (intersection_found) {
-                if (abs(dist_measure-temp_dist_measure) < tolerance_dist){
-                    if (dist_measure < (SENSOR_RANGE-ignore_max)){
-                        if (shortest_dist_measure > temp_dist_measure) {
-                            shortest_dist_measure = temp_dist_measure;
-                            if ((distBetweenPoints(temp_intersection, wall_start) > min_corner_dist) && (distBetweenPoints(temp_intersection, wall_end) > min_corner_dist)){
+                if (abs(dist_measure-temp_dist_measure) < TOLERANCE_DIST){
+                    if (dist_measure < (SENSOR_RANGE-IGNORE_MAX)){
+                        if (shortest_dist_measure > abs(dist_measure-temp_dist_measure)) {
+                            shortest_dist_measure = abs(dist_measure-temp_dist_measure);
+                            if ((distBetweenPoints(temp_intersection, wall_start) > MIN_CORNER_DIST) && (distBetweenPoints(temp_intersection, wall_end) > MIN_CORNER_DIST)){
                                 looking_at = 'W';
                                 cell_column = i;
                                 cell_row = j;
@@ -293,7 +275,7 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                             }
                         }
                     } 
-                } else if (dist_measure > (temp_dist_measure + tolerance_dist)) {
+                } else if (dist_measure > (temp_dist_measure + TOLERANCE_DIST)) {
                     labyrinth[i][j].update_wall('W', false);
                     if (j-1 >= 0){
                         labyrinth[i][j-1].update_wall('E', false);
@@ -310,7 +292,7 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
             wall_end = corners[i][j].get_point('2');
             temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
             if (intersection_found){
-                if (abs(dist_measure-temp_dist_measure) < tolerance_dist){
+                if (abs(dist_measure-temp_dist_measure) < TOLERANCE_DIST){
                     if (shortest_dist_measure > temp_dist_measure) {
                         shortest_dist_measure = temp_dist_measure;
 
@@ -325,7 +307,7 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
             wall_end = corners[i][j].get_point('3');
             temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
             if (intersection_found){
-                if (abs(dist_measure-temp_dist_measure) < tolerance_dist){
+                if (abs(dist_measure-temp_dist_measure) < TOLERANCE_DIST){
                     if (shortest_dist_measure > temp_dist_measure) {
                         shortest_dist_measure = temp_dist_measure;
 
@@ -340,7 +322,7 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
             wall_end = corners[i][j].get_point('4');
             temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
             if (intersection_found){
-                if (abs(dist_measure-temp_dist_measure) < tolerance_dist){
+                if (abs(dist_measure-temp_dist_measure) < TOLERANCE_DIST){
                     if (shortest_dist_measure > temp_dist_measure) {
                         shortest_dist_measure = temp_dist_measure;
 
@@ -355,7 +337,7 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
             wall_end = corners[i][j].get_point('1');
             temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
             if (intersection_found){
-                if (abs(dist_measure-temp_dist_measure) < tolerance_dist){
+                if (abs(dist_measure-temp_dist_measure) < TOLERANCE_DIST){
                     if (shortest_dist_measure > temp_dist_measure) {
                         shortest_dist_measure = temp_dist_measure;
 
@@ -492,7 +474,7 @@ void RobotEst::get_offset_front_right(float& height, float& angle_rel, float alp
 }
 
 
-void RobotEst::localization(float error_band=M_PI/6, float smoothing=0.1){
+void RobotEst::localization(){
     char driving_dir;
     float height;
     float angle_rel;
@@ -502,13 +484,13 @@ void RobotEst::localization(float error_band=M_PI/6, float smoothing=0.1){
     float temp_rob_dir = 0; 
 
     //   # determine in which direction we are driving
-    if (((2*M_PI - error_band) < rob_dir) || (rob_dir < error_band)) { //# yes, it is 'or'
+    if (((2*M_PI - L_ERROR_BAND) < rob_dir) || (rob_dir < L_ERROR_BAND)) { //# yes, it is 'or'
         driving_dir = 'E';
-    } else if ((3*M_PI/2 - error_band < rob_dir) && (rob_dir < 3*M_PI/2 + error_band)) {
+    } else if ((3*M_PI/2 - L_ERROR_BAND < rob_dir) && (rob_dir < 3*M_PI/2 + L_ERROR_BAND)) {
         driving_dir = 'N';
-    } else if ((M_PI - error_band < rob_dir) && (rob_dir < M_PI + error_band)) {
+    } else if ((M_PI - L_ERROR_BAND < rob_dir) && (rob_dir < M_PI + L_ERROR_BAND)) {
         driving_dir = 'W';
-    } else if ((M_PI/2 - error_band < rob_dir) && (rob_dir < M_PI/2 + error_band)) {
+    } else if ((M_PI/2 - L_ERROR_BAND < rob_dir) && (rob_dir < M_PI/2 + L_ERROR_BAND)) {
         driving_dir = 'S';
     } else {
         // # if we are currently turning, don't update
@@ -665,10 +647,10 @@ void RobotEst::localization(float error_band=M_PI/6, float smoothing=0.1){
 
     if (num_updates >= 1){
         // cout << "before: " << rob_pos[0] << ", " << rob_pos[1] << endl;
-        rob_pos[0] = (1-smoothing)*rob_pos[0] + smoothing*(temp_rob_pos[0]/num_updates);
-        rob_pos[1] = (1-smoothing)*rob_pos[1] + smoothing*(temp_rob_pos[1]/num_updates);
+        rob_pos[0] = (1-L_SMOOTHING)*rob_pos[0] + L_SMOOTHING*(temp_rob_pos[0]/num_updates);
+        rob_pos[1] = (1-L_SMOOTHING)*rob_pos[1] + L_SMOOTHING*(temp_rob_pos[1]/num_updates);
         // cout << "after: " << rob_pos[0] << ", " << rob_pos[1] << endl;
-        rob_dir = (1-smoothing)*rob_dir + smoothing*(round(rob_dir/M_PI_2)*M_PI_2 + ((temp_rob_dir/num_updates)-M_PI));
+        rob_dir = (1-L_SMOOTHING)*rob_dir + L_SMOOTHING*(round(rob_dir/M_PI_2)*M_PI_2 + ((temp_rob_dir/num_updates)-M_PI));
 
         rob_dir = fmod(rob_dir, 2*M_PI);
         if (rob_dir < 0) {
@@ -681,48 +663,48 @@ void RobotEst::localization(float error_band=M_PI/6, float smoothing=0.1){
     if (sensS.looking_at != '0'){
         if (sensS.looking_at == 'N') {
             distance = (sensS.dist_measure + sensS.offset_position) * cos(sensS.sens_dir - 3*M_PI_2);
-            rob_pos[1] = (1-smoothing)*rob_pos[1] + smoothing*(sensS.intersection[1] + distance);
+            rob_pos[1] = (1-L_SMOOTHING)*rob_pos[1] + L_SMOOTHING*(sensS.intersection[1] + distance);
         } else if (sensS.looking_at == 'E') {
             distance = (sensS.dist_measure + sensS.offset_position) * cos(sensS.sens_dir);
-            rob_pos[0] = (1-smoothing)*rob_pos[0] + smoothing*(sensS.intersection[0] - distance);
+            rob_pos[0] = (1-L_SMOOTHING)*rob_pos[0] + L_SMOOTHING*(sensS.intersection[0] - distance);
         } else if (sensS.looking_at == 'S') {
             distance = (sensS.dist_measure + sensS.offset_position) * cos(sensS.sens_dir - M_PI_2);
-            rob_pos[1] = (1-smoothing)*rob_pos[1] + smoothing*(sensS.intersection[1] - distance);
+            rob_pos[1] = (1-L_SMOOTHING)*rob_pos[1] + L_SMOOTHING*(sensS.intersection[1] - distance);
         } else if (sensS.looking_at == 'W') {
             distance = (sensS.dist_measure + sensS.offset_position) * cos(sensS.sens_dir - M_PI);
-            rob_pos[0] = (1-smoothing)*rob_pos[0] + smoothing*(sensS.intersection[0] + distance);
+            rob_pos[0] = (1-L_SMOOTHING)*rob_pos[0] + L_SMOOTHING*(sensS.intersection[0] + distance);
         }
     }
 
     if (sensL2.looking_at != '0'){
         if (sensL2.looking_at == 'N') {
             distance = (sensL2.dist_measure + sensL2.offset_position) * cos(3*M_PI_2 - sensL2.sens_dir);
-            rob_pos[1] = (1-smoothing)*rob_pos[1] + smoothing*(sensL2.intersection[1] + distance);
+            rob_pos[1] = (1-L_SMOOTHING)*rob_pos[1] + L_SMOOTHING*(sensL2.intersection[1] + distance);
         } else if (sensL2.looking_at == 'E') {
             distance = (sensL2.dist_measure + sensL2.offset_position) * cos(sensL2.sens_dir);
-            rob_pos[0] = (1-smoothing)*rob_pos[0] + smoothing*(sensL2.intersection[0] - distance);
+            rob_pos[0] = (1-L_SMOOTHING)*rob_pos[0] + L_SMOOTHING*(sensL2.intersection[0] - distance);
         } else if (sensL2.looking_at == 'S') {
             distance = (sensL2.dist_measure + sensL2.offset_position) * cos(M_PI_2 - sensL2.sens_dir);
-            rob_pos[1] = (1-smoothing)*rob_pos[1] + smoothing*(sensL2.intersection[1] - distance);
+            rob_pos[1] = (1-L_SMOOTHING)*rob_pos[1] + L_SMOOTHING*(sensL2.intersection[1] - distance);
         } else if (sensL2.looking_at == 'W') {
             distance = (sensL2.dist_measure + sensL2.offset_position) * cos(M_PI - sensL2.sens_dir);
-            rob_pos[0] = (1-smoothing)*rob_pos[0] + smoothing*(sensL2.intersection[0] + distance);
+            rob_pos[0] = (1-L_SMOOTHING)*rob_pos[0] + L_SMOOTHING*(sensL2.intersection[0] + distance);
         }
     }
 
     if (sensR2.looking_at != '0'){
         if (sensR2.looking_at == 'N') {
             distance = (sensR2.dist_measure + sensR2.offset_position) * cos(3*M_PI_2 - sensR2.sens_dir);
-            rob_pos[1] = (1-smoothing)*rob_pos[1] + smoothing*(sensR2.intersection[1] + distance);
+            rob_pos[1] = (1-L_SMOOTHING)*rob_pos[1] + L_SMOOTHING*(sensR2.intersection[1] + distance);
         } else if (sensR2.looking_at == 'E') {
             distance = (sensR2.dist_measure + sensR2.offset_position) * cos(sensR2.sens_dir);
-            rob_pos[0] = (1-smoothing)*rob_pos[0] + smoothing*(sensR2.intersection[0] - distance);
+            rob_pos[0] = (1-L_SMOOTHING)*rob_pos[0] + L_SMOOTHING*(sensR2.intersection[0] - distance);
         } else if (sensR2.looking_at == 'S') {
             distance = (sensR2.dist_measure + sensR2.offset_position) * cos(M_PI_2 - sensR2.sens_dir);
-            rob_pos[1] = (1-smoothing)*rob_pos[1] + smoothing*(sensR2.intersection[1] - distance);
+            rob_pos[1] = (1-L_SMOOTHING)*rob_pos[1] + L_SMOOTHING*(sensR2.intersection[1] - distance);
         } else if (sensR2.looking_at == 'W') {
             distance = (sensR2.dist_measure + sensR2.offset_position) * cos(M_PI - sensR2.sens_dir);
-            rob_pos[0] = (1-smoothing)*rob_pos[0] + smoothing*(sensR2.intersection[0] + distance);
+            rob_pos[0] = (1-L_SMOOTHING)*rob_pos[0] + L_SMOOTHING*(sensR2.intersection[0] + distance);
         }
     }
 }

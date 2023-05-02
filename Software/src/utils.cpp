@@ -11,6 +11,8 @@
 
 using namespace std;
 
+float MAZE_NUMBER = 5;
+
 void setup_sdl(){
 
 }
@@ -28,14 +30,14 @@ int random_int(int min, int max) {
     static random_device rd;
     static mt19937 gen(rd());
     uniform_int_distribution<> dis(min, max);
-    return 5;
+    return MAZE_NUMBER;
     return dis(gen);
 }
 
 float gaussianNoise(float mean, float stddev) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::normal_distribution<float> dist(mean, stddev);
+    random_device rd;
+    mt19937 gen(rd());
+    normal_distribution<float> dist(mean, stddev);
     return dist(gen);
 }
 

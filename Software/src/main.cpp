@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 
     mouse.measureDistances(labyrinth, corners);
     mouseEst.updatePosition(renderer, mouse, labyrinthEst, cornersEst);
-    mouseEst.localization(M_PI/6, 0.1);
+    mouseEst.localization();
 
     SDL_RenderPresent(renderer);
   }

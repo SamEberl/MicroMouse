@@ -14,7 +14,14 @@
 
 using namespace std;
 
-PIDController::PIDController() : kp(0.5), ki(0.01), kd(0.01), maxOutput(1), minOutput(-1), lastError(0), totalError(0) {}
+float KP = 5;
+float KI = 1;
+float KD = 1;
+float PID_MAX = 1.0;
+float PID_MIN = -1.0;
+float THRESHOLD_NO_WALL = 0.2;
+
+PIDController::PIDController() : kp(KP), ki(KI), kd(KD), maxOutput(PID_MAX), minOutput(PID_MIN), lastError(0), totalError(0) {}
 
 PIDController::PIDController(float kp, float ki, float kd, float maxOutput, float minOutput) {
     this->kp = kp;
@@ -45,14 +52,13 @@ void PIDController::reset(){
 }
 
 bool findGoal(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], vector<int> goal_cell) {
-    float threshold = 0.2;
     for (int x = 1; x < LABYRINTH_WIDTH; x++) {
         for (int y = 1; y < LABYRINTH_HEIGHT; y++) {
             
-            if( labyrinth[y][x].N < threshold && 
-                labyrinth[y][x].W < threshold &&
-                labyrinth[y-1][x-1].S < threshold &&
-                labyrinth[y-1][x-1].E < threshold) {
+            if( labyrinth[y][x].N < THRESHOLD_NO_WALL && 
+                labyrinth[y][x].W < THRESHOLD_NO_WALL &&
+                labyrinth[y-1][x-1].S < THRESHOLD_NO_WALL &&
+                labyrinth[y-1][x-1].E < THRESHOLD_NO_WALL) {
 
                 labyrinth[y][x].is_goal = true;
                 labyrinth[y-1][x].is_goal = true;
@@ -186,11 +192,6 @@ void printPath(stack<vector<int>> path) {
 
 
 Planner::Planner() {
-    turnPID.kp = 5;
-    turnPID.ki = 1;
-    turnPID.kd = 1;
-    turnPID.maxOutput = 1.5;
-    turnPID.minOutput = -1.5;
     start_cell = {LABYRINTH_WIDTH-1, LABYRINTH_HEIGHT-1};
     current_cell = {LABYRINTH_WIDTH-1, LABYRINTH_HEIGHT-1};
     goal_cell = {-1, -1};
