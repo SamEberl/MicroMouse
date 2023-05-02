@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  SDL_Window *window = SDL_CreateWindow("SDL Circle", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+  SDL_Window *window = SDL_CreateWindow("MicroMouse Simulation", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
   if (!window) {
     SDL_Log("Unable to create window: %s", SDL_GetError());
     return 1;
@@ -36,8 +36,8 @@ int main(int argc, char *argv[]) {
   Robot mouse = Robot(rob_x, rob_y, rob_dir, DISTANCE_WHEELS, MOUSE_WIDTH, MOUSE_HEIGHT);
   Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT];
   Corner corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1];
-  // generate_labyrinth(labyrinth, corners);
-  generate_custom_labyrinth(labyrinth, corners);
+  generate_labyrinth(labyrinth, corners);
+  // generate_custom_labyrinth(labyrinth, corners);
   print_labyrinth(labyrinth);
   mouse.measureDistances(labyrinth, corners);
 
@@ -47,7 +47,15 @@ int main(int argc, char *argv[]) {
   init_labyrinth(labyrinthEst);
   init_corners(cornersEst);
 
-  PIDController controller = PIDController(0.7, 0.1, 0.1, 2.0, -2.0);
+  PIDController controller = PIDController(0.7, 0.05, 0.01, 1.0, -1.0);
+
+
+  // int grid[LABYRINTH_WIDTH][LABYRINTH_HEIGHT] = {0};
+  // vector<int> start = {LABYRINTH_WIDTH-1, LABYRINTH_HEIGHT-1};
+  // getPath(labyrinthEst, start, {-1, -1});
+
+
+  Planner planner;
 
   bool running = true;
   while (running) {
@@ -83,9 +91,9 @@ int main(int argc, char *argv[]) {
     // }
 
 
-    // if (mouse.sensS.dist_measure < SENSOR_RANGE*2/5) {
+    // if (mouse.sensS.dist_measure < SENSOR_RANGE/4) {
     //   mouse.updatePosition(-2.5, 2.5);
-    // } else if (mouse.sensR2.dist_measure < SENSOR_RANGE*2/5) {
+    // } else if (mouse.sensR2.dist_measure < SENSOR_RANGE/4) {
     //   mouse.updatePosition(-2.5, 2.5);
     // } else {
     //   mouse.updatePosition(2.5, 2.5);
@@ -104,13 +112,17 @@ int main(int argc, char *argv[]) {
     // mouse.updatePosition(-0.5, 0.5);
     // mouseEst.updatePosition(-0.5, 0.5);
 
-    float driveDiff = controller.calculate(3*M_PI_2, mouseEst.rob_dir, 1);
-    mouse.updatePosition(0.3 + driveDiff, 0.3 - driveDiff);
-    mouseEst.updatePosition(0.3 + driveDiff, 0.3 - driveDiff);
+    // float dot = 0*cos(mouseEst.rob_dir) + sin(mouseEst.rob_dir);
+    // float driveDiff = controller.calculate(1, dot, 1);
+    // mouse.updatePosition(0.3 + driveDiff, 0.3 - driveDiff);
+
+    vector<float> wheel_speed = planner.update(mouseEst, labyrinthEst);
+    mouse.updatePosition(wheel_speed[0], wheel_speed[1]);
+    
 
     mouse.measureDistances(labyrinth, corners);
-    mouseEst.compareDistances(renderer, mouse, labyrinthEst, cornersEst);
-    mouseEst.localization(M_PI/6, 0.05);
+    mouseEst.updatePosition(renderer, mouse, labyrinthEst, cornersEst);
+    mouseEst.localization(M_PI/6, 0.1);
 
     SDL_RenderPresent(renderer);
   }

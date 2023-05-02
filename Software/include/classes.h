@@ -36,6 +36,7 @@ public:
     void remove_wall(char direction);
     bool is_seen() const;
     void set_seen(bool value);
+    bool seen;
 
 private:
     float row;
@@ -44,7 +45,6 @@ private:
     bool E;
     bool S;
     bool W;
-    bool seen;
     vector<float> p1;
     vector<float> p2;
     vector<float> p3;
@@ -68,11 +68,12 @@ class Sensor {
 class Robot {
     public:
         vector<float> rob_pos;
-        vector<float> velocity;
         float rob_dir;
         float distance_wheels;
         float width;
         float height;
+        float speedLeft;
+        float speedRight;
         Sensor sensR;
         Sensor sensR2;
         Sensor sensS;

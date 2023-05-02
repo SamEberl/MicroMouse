@@ -28,7 +28,7 @@ int random_int(int min, int max) {
     static random_device rd;
     static mt19937 gen(rd());
     uniform_int_distribution<> dis(min, max);
-    return 4;
+    return 5;
     return dis(gen);
 }
 
@@ -129,6 +129,8 @@ void generate_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], Corne
             stack.push(neighbor);
         }
     }
+    labyrinth[0][1].remove_wall('S');
+    labyrinth[1][1].remove_wall('N');
 }
 
 void generate_custom_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], Corner corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]) {
@@ -154,18 +156,33 @@ void generate_custom_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]
     //                         {0, 0, 0, 0, 0, 0},
     //                         {0, 0, 0, 0, 0, 0}};
 
-    bool walls_E[6][6] = {  {1, 1, 1, 1, 0, 1},
+    // bool walls_E[6][6] = {  {1, 1, 1, 1, 0, 1},
+    //                         {1, 1, 1, 1, 1, 1},
+    //                         {1, 1, 1, 1, 1, 1},
+    //                         {1, 1, 1, 1, 1, 1},
+    //                         {1, 1, 1, 1, 1, 1},
+    //                         {1, 1, 1, 1, 0, 1}};
+    // bool walls_S[6][6] = {  {0, 1, 1, 1, 0, 0},
+    //                         {0, 1, 1, 1, 0, 0},
+    //                         {1, 1, 1, 1, 0, 0},
+    //                         {1, 1, 1, 1, 0, 0},
+    //                         {1, 1, 1, 1, 0, 0},
+    //                         {1, 1, 1, 1, 1, 1}};
+
+
+    bool walls_E[6][6] = {  {1, 1, 1, 1, 1, 1},
                             {1, 1, 1, 1, 1, 1},
                             {1, 1, 1, 1, 1, 1},
                             {1, 1, 1, 1, 1, 1},
                             {1, 1, 1, 1, 1, 1},
-                            {1, 1, 1, 1, 0, 1}};
-    bool walls_S[6][6] = {  {0, 1, 1, 1, 0, 0},
-                            {0, 1, 1, 1, 0, 0},
-                            {1, 1, 1, 1, 0, 0},
-                            {1, 1, 1, 1, 0, 0},
-                            {1, 1, 1, 1, 0, 0},
                             {1, 1, 1, 1, 1, 1}};
+    bool walls_S[6][6] = {  {1, 1, 1, 1, 1, 1},
+                            {1, 1, 1, 1, 1, 1},
+                            {1, 1, 1, 1, 1, 1},
+                            {1, 1, 1, 1, 1, 1},
+                            {1, 1, 1, 1, 1, 1},
+                            {1, 1, 1, 1, 1, 1}};
+
     for (int i = 0; i < LABYRINTH_HEIGHT; i++) {
         for (int j = 0; j < LABYRINTH_WIDTH; j++) {
             // cout << walls_W[i][j];
@@ -226,13 +243,13 @@ vector<float> findIntersection(vector<float> starting_point,
     float y3 = starting_point[1];
     float x4 = end_point[0];
     float y4 = end_point[1];
-    float denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-    float eps = 0.001;
-    if (denominator < eps && denominator > -eps) {
-        // the two lines are parallel, so there is no intersection
-        intersection_found = false;
-        return vector<float>{-1.0, -1.0};
-    }
+    // float denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    // float eps = 0.001;
+    // if (denominator < eps && denominator > -eps) {
+    //     // the two lines are parallel, so there is no intersection
+    //     intersection_found = false;
+    //     return vector<float>{-1.0, -1.0};
+    // }
     float t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4));
     float u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4));
     if (0 <= t && t <= 1 && 0 <= u && u <= 1) {
@@ -243,7 +260,7 @@ vector<float> findIntersection(vector<float> starting_point,
         intersection_found = true;
         return vector<float>{x, y};
     } else {
-        // the two lines do not intersect, so return (-1, -1) and distance 0
+        // the two lines do not intersect, so return (-1, -1) and distance -1
         intersection_found = false;
         distance_to_intersection = -1.0;
         return vector<float>{-1.0, -1.0};

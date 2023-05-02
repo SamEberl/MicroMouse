@@ -61,9 +61,9 @@ void drawRobo(SDL_Renderer *renderer, Robot mouse){
     float y_dir = sin(mouse.rob_dir);
     float width = mouse.width;
     float height = mouse.height;
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 100, 100, 255, SDL_ALPHA_OPAQUE);
     drawRotatedSquare(renderer, x, y, x_dir, y_dir, height, width);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 100, 100, 255, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawLine(renderer, x, y, x+x_dir*height/2, y+y_dir*height/2);
 
     drawSensor(renderer, mouse.sensR);
@@ -80,9 +80,9 @@ void drawRobo(SDL_Renderer *renderer, RobotEst mouse){
     float y_dir = sin(mouse.rob_dir);
     float width = mouse.width;
     float height = mouse.height;
-    SDL_SetRenderDrawColor(renderer, 100, 100, 255, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     drawRotatedSquare(renderer, x, y, x_dir, y_dir, height, width);
-    SDL_SetRenderDrawColor(renderer, 100, 100, 255, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawLine(renderer, x, y, x+x_dir*height/2, y+y_dir*height/2);
 
     drawSensor(renderer, mouse.sensR);
@@ -95,7 +95,7 @@ void drawRobo(SDL_Renderer *renderer, RobotEst mouse){
 void drawSensor(SDL_Renderer *renderer, Sensor sensor){
     float x = sensor.sens_pos[0];
     float y = sensor.sens_pos[1];
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 100, 100, 255, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawLine(renderer, x, y,
                         x + cos(sensor.sens_dir)*sensor.dist_measure, 
                         y + sin(sensor.sens_dir)*sensor.dist_measure);
@@ -104,7 +104,7 @@ void drawSensor(SDL_Renderer *renderer, Sensor sensor){
 void drawSensor(SDL_Renderer *renderer, SensorEst sensor){
     float x = sensor.sens_pos[0];
     float y = sensor.sens_pos[1];
-    SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawLine(renderer, x, y,
                         x + cos(sensor.sens_dir)*sensor.dist_measure, 
                         y + sin(sensor.sens_dir)*sensor.dist_measure);

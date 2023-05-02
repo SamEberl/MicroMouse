@@ -13,13 +13,9 @@ class CornerEst {
 public:
     CornerEst();
     void initialize(float row, float col);
-    int get_row() const;
-    int get_col() const; 
     vector<float> get_point(char pointNumber) const;
 
 private:
-    float row;
-    float col;
     vector<float> p1;
     vector<float> p2;
     vector<float> p3;
@@ -35,18 +31,16 @@ public:
     vector<float> get_point(char pointNumber) const;
     bool has_wall(char direction) const;
     void update_wall(char direction, bool wallPresent);
-    bool is_seen() const;
-    void set_seen(bool value);
-        float S;
-
-private:
-    float row;
-    float col;
+    bool seen;
+    float threshold_seen;
+    bool is_goal;
     float N;
     float E;
-
+    float S;
     float W;
-    bool seen;
+
+private:
+
     vector<float> p1;
     vector<float> p2;
     vector<float> p3;
@@ -77,6 +71,8 @@ class RobotEst {
         float distance_wheels;
         float width;
         float height;
+        float speedLeft;
+        float speedRight;
         SensorEst sensR;
         SensorEst sensR2;
         SensorEst sensS;
@@ -84,8 +80,9 @@ class RobotEst {
         SensorEst sensL;
 
         RobotEst(float x, float y, float direction_, float distance_wheels, float width, float height);
-        void updatePosition(float SpeedL, float SpeedR);
-        void compareDistances(SDL_Renderer *renderer, Robot mouse, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], CornerEst corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]);
+        void updatePosition(SDL_Renderer *renderer, Robot mouse, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], CornerEst corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]);
+        void get_wheelspeeds(Robot mouse);
+        void readMeasurements(Robot mouse);
         void get_offset_left(float& offset, float& theta_rel, float alpha, float beta);
         void get_offset_right(float& offset, float& theta_rel, float alpha, float beta);
         void get_offset_front_left(float& offset, float& theta_rel, float alpha);

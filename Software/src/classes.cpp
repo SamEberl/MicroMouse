@@ -10,7 +10,6 @@
 #define _USE_MATH_DEFINES
 
 float SPEED_VAR = 0.05;
-float SENS_VAR = 5;
 
 // use array<float, 2> instead of vector for efficiency?
 
@@ -223,18 +222,20 @@ void Sensor::getDistanceToWall(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]
         }
     }
 
-    dist_measure = shortest_dist_measure + gaussianNoise(0, SENS_VAR);
+    dist_measure = shortest_dist_measure;
 }
 
 
 Robot::Robot(float x, float y, float direction_, float distance_wheels_, float width_, float height_) {
     rob_pos.resize(2);
     rob_pos = {x, y};
-    velocity = {x, y};
     rob_dir = direction_;
     distance_wheels = distance_wheels_;
     width = width_;
     height = height_;
+
+    speedLeft = 0;
+    speedRight = 0;
 
     sensR.init(rob_pos, rob_dir, M_PI/2, width/2);
     sensR2.init(rob_pos, rob_dir, M_PI/4, height/2);
@@ -246,17 +247,19 @@ Robot::Robot(float x, float y, float direction_, float distance_wheels_, float w
 void Robot::updatePosition(float speedLeft_, float speedRight_) {
     float deltaTime = 1; //Param?
     float wheelRadius = 1;
-    float speedLeft = speedLeft_ + gaussianNoise(0, SPEED_VAR);
-    float speedRight = speedRight_ + + gaussianNoise(0, SPEED_VAR);
+    float velocity;
+    float angularVelocity;
+    speedLeft = speedLeft_ + gaussianNoise(0, SPEED_VAR);
+    speedRight = speedRight_ + + gaussianNoise(0, SPEED_VAR);
     // Calculate the new position of the robot
-    float speed = wheelRadius * (speedLeft + speedRight) / 2;
-    float angularVelocity = wheelRadius * (speedLeft - speedRight) / distance_wheels;
+    velocity = wheelRadius * (speedLeft + speedRight) / 2;
+    angularVelocity = wheelRadius * (speedLeft - speedRight) / distance_wheels;
     rob_dir = fmod(rob_dir + angularVelocity * deltaTime, 2*M_PI);
     if (rob_dir < 0) {
         rob_dir += 2*M_PI;
     }
-    rob_pos[0] += speed * cos(rob_dir) * deltaTime;
-    rob_pos[1] += speed * sin(rob_dir) * deltaTime;
+    rob_pos[0] += velocity * cos(rob_dir) * deltaTime;
+    rob_pos[1] += velocity * sin(rob_dir) * deltaTime;
 
     // Calculate the new position of the sensors
     sensR.updatePosition(rob_pos, rob_dir);
