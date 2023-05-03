@@ -2,6 +2,7 @@
 #define CLASSES_H
 
 #include <vector>
+#include <queue>
 #include "defs.h"
 
 #include <SDL2/SDL.h>
@@ -79,6 +80,8 @@ class Robot {
         Sensor sensS;
         Sensor sensL2;
         Sensor sensL;
+
+        vector<vector<float>> taken_path;
 
         Robot(float x, float y, float direction_, float distance_wheels, float width, float height);
         void updatePosition(float SpeedL, float SpeedR);

@@ -61,9 +61,9 @@ void drawRobo(SDL_Renderer *renderer, Robot mouse){
     float y_dir = sin(mouse.rob_dir);
     float width = mouse.width;
     float height = mouse.height;
-    SDL_SetRenderDrawColor(renderer, 100, 100, 255, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 0, 200, 0, SDL_ALPHA_OPAQUE);
     drawRotatedSquare(renderer, x, y, x_dir, y_dir, height, width);
-    SDL_SetRenderDrawColor(renderer, 100, 100, 255, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 0, 200, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawLine(renderer, x, y, x+x_dir*height/2, y+y_dir*height/2);
 
     drawSensor(renderer, mouse.sensR);
@@ -71,6 +71,23 @@ void drawRobo(SDL_Renderer *renderer, Robot mouse){
     drawSensor(renderer, mouse.sensS);
     drawSensor(renderer, mouse.sensL2);
     drawSensor(renderer, mouse.sensL);
+
+    float start_x;
+    float start_y;
+    float end_x = mouse.taken_path[0][0];
+    float end_y = mouse.taken_path[0][1];
+
+    for (int i = 0; i < mouse.taken_path.size(); i += 1){
+        start_x = end_x;
+        start_y = end_y;
+
+        end_x = mouse.taken_path[i][0];
+        end_y = mouse.taken_path[i][1];
+
+        // cout << start_x << ", " << start_y << " ---- " << end_x << ", " << end_y << endl;
+        SDL_SetRenderDrawColor(renderer, 0, 200, 0, SDL_ALPHA_OPAQUE);
+        SDL_RenderDrawLine(renderer, start_x, start_y, end_x, end_y);
+    }
 }
 
 void drawRobo(SDL_Renderer *renderer, RobotEst mouse){
@@ -95,7 +112,7 @@ void drawRobo(SDL_Renderer *renderer, RobotEst mouse){
 void drawSensor(SDL_Renderer *renderer, Sensor sensor){
     float x = sensor.sens_pos[0];
     float y = sensor.sens_pos[1];
-    SDL_SetRenderDrawColor(renderer, 100, 100, 255, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawLine(renderer, x, y,
                         x + cos(sensor.sens_dir)*sensor.dist_measure, 
                         y + sin(sensor.sens_dir)*sensor.dist_measure);
@@ -104,7 +121,7 @@ void drawSensor(SDL_Renderer *renderer, Sensor sensor){
 void drawSensor(SDL_Renderer *renderer, SensorEst sensor){
     float x = sensor.sens_pos[0];
     float y = sensor.sens_pos[1];
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawLine(renderer, x, y,
                         x + cos(sensor.sens_dir)*sensor.dist_measure, 
                         y + sin(sensor.sens_dir)*sensor.dist_measure);
@@ -122,25 +139,25 @@ void drawLabyrinth(SDL_Renderer *renderer, Cell labyrinth[LABYRINTH_WIDTH][LABYR
 
             //draw north
             if (labyrinth[i][j].has_wall('N')){
-                SDL_SetRenderDrawColor(renderer, 130, 130, 255, 128);
+                SDL_SetRenderDrawColor(renderer, 150, 150, 255, 255);
                 SDL_RenderDrawLine(renderer, p1[0], p1[1], p2[0], p2[1]);
             }
             
             //draw east
             if (labyrinth[i][j].has_wall('E')){
-                SDL_SetRenderDrawColor(renderer, 130, 130, 255, 128);
+                SDL_SetRenderDrawColor(renderer, 150, 150, 255, 255);
                 SDL_RenderDrawLine(renderer, p2[0], p2[1], p3[0], p3[1]);
             }
             
             //draw south
             if (labyrinth[i][j].has_wall('S')){
-                SDL_SetRenderDrawColor(renderer, 130, 130, 255, 128);
+                SDL_SetRenderDrawColor(renderer, 150, 150, 255, 255);
                 SDL_RenderDrawLine(renderer, p4[0], p4[1], p3[0], p3[1]);
             }
             
             //draw west
             if (labyrinth[i][j].has_wall('W')){
-                SDL_SetRenderDrawColor(renderer, 130, 130, 255, 128);
+                SDL_SetRenderDrawColor(renderer, 150, 150, 255, 255);
                 SDL_RenderDrawLine(renderer, p1[0], p1[1], p4[0], p4[1]);
             }
         }

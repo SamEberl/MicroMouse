@@ -29,15 +29,18 @@ int main(int argc, char *argv[]) {
   }
 
   float rob_x = (LABYRINTH_WIDTH*(CELL_SIZE + WALL_WIDTH))-(CELL_SIZE/2);
+  // rob_x = (3*(CELL_SIZE + WALL_WIDTH))-(CELL_SIZE/2);
   float rob_y = (LABYRINTH_HEIGHT*(CELL_SIZE + WALL_WIDTH))-(CELL_SIZE/2);
+  // rob_y = (1*(CELL_SIZE + WALL_WIDTH))-(CELL_SIZE/2);
   float rob_dir = M_PI*3/2;
+  // rob_dir = M_PI*3.5/2;
 
   //SDL wants to have width before height. So to stay consistent it's like this everywhere.
   Robot mouse = Robot(rob_x, rob_y, rob_dir, DISTANCE_WHEELS, MOUSE_WIDTH, MOUSE_HEIGHT);
   Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT];
   Corner corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1];
-  generate_labyrinth(labyrinth, corners);
-  // generate_custom_labyrinth(labyrinth, corners);
+  // generate_labyrinth(labyrinth, corners);
+  generate_custom_labyrinth(labyrinth, corners);
   print_labyrinth(labyrinth);
   mouse.measureDistances(labyrinth, corners);
 
@@ -118,6 +121,7 @@ int main(int argc, char *argv[]) {
 
     vector<float> wheel_speed = planner.update(mouseEst, labyrinthEst);
     mouse.updatePosition(wheel_speed[0], wheel_speed[1]);
+    
     
 
     mouse.measureDistances(labyrinth, corners);

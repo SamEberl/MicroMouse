@@ -2,12 +2,15 @@
 #include <vector>
 #include <stdio.h>
 #include <iostream>
+#include <queue>
 #include "classes.h"
 #include "defs.h"
 #include "utils.h"
 #include <SDL2/SDL.h>
 
 #define _USE_MATH_DEFINES
+
+using namespace std;
 
 float SPEED_VAR = 0.05;
 
@@ -242,6 +245,8 @@ Robot::Robot(float x, float y, float direction_, float distance_wheels_, float w
     sensS.init(rob_pos, rob_dir, 0.0, height/2);
     sensL2.init(rob_pos, rob_dir, -M_PI/4, height/2);
     sensL.init(rob_pos, rob_dir, -M_PI/2, width/2);
+
+    taken_path.push_back(rob_pos);
 }
 
 void Robot::updatePosition(float speedLeft_, float speedRight_) {
@@ -260,6 +265,14 @@ void Robot::updatePosition(float speedLeft_, float speedRight_) {
     }
     rob_pos[0] += velocity * cos(rob_dir) * deltaTime;
     rob_pos[1] += velocity * sin(rob_dir) * deltaTime;
+
+    // cout << rob_pos[0] << ", " << rob_pos[1] << endl;
+
+    if (distBetweenPoints(rob_pos, taken_path.back())>10) {    
+       taken_path.push_back(rob_pos);
+    }
+
+
 
     // Calculate the new position of the sensors
     sensR.updatePosition(rob_pos, rob_dir);

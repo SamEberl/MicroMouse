@@ -14,8 +14,8 @@ using namespace std;
 
 float WALL_RETAIN = 0.99;
 float POS_RETAIN = 0.999;
-float SENS_VAR = 5.0;
-float ENCODER_VAR = 0.1;
+float SENS_VAR = 7.0;
+float ENCODER_VAR = 0.05;
 float THRESHOLD_WALL_SEEN = 0.6;
 
 float MIN_CORNER_DIST = 20;
@@ -23,7 +23,7 @@ float TOLERANCE_DIST = 15;
 float IGNORE_MAX = 20;
 
 float L_ERROR_BAND=M_PI/6;
-float L_SMOOTHING=0.1;
+float L_SMOOTHING=0.03;
 
 CornerEst::CornerEst() {}
 void CornerEst::initialize(float row, float col) {
@@ -293,9 +293,8 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
             temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
             if (intersection_found){
                 if (abs(dist_measure-temp_dist_measure) < TOLERANCE_DIST){
-                    if (shortest_dist_measure > temp_dist_measure) {
-                        shortest_dist_measure = temp_dist_measure;
-
+                    if (shortest_dist_measure > abs(dist_measure-temp_dist_measure)) {
+                        shortest_dist_measure = abs(dist_measure-temp_dist_measure);
                         looking_at = '0';
                         cell_column = -1;
                         cell_row = -1;
@@ -308,9 +307,8 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
             temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
             if (intersection_found){
                 if (abs(dist_measure-temp_dist_measure) < TOLERANCE_DIST){
-                    if (shortest_dist_measure > temp_dist_measure) {
-                        shortest_dist_measure = temp_dist_measure;
-
+                    if (shortest_dist_measure > abs(dist_measure-temp_dist_measure)) {
+                        shortest_dist_measure = abs(dist_measure-temp_dist_measure);
                         looking_at = '0';
                         cell_column = -1;
                         cell_row = -1;
@@ -323,9 +321,8 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
             temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
             if (intersection_found){
                 if (abs(dist_measure-temp_dist_measure) < TOLERANCE_DIST){
-                    if (shortest_dist_measure > temp_dist_measure) {
-                        shortest_dist_measure = temp_dist_measure;
-
+                    if (shortest_dist_measure > abs(dist_measure-temp_dist_measure)) {
+                        shortest_dist_measure = abs(dist_measure-temp_dist_measure);
                         looking_at = '0';
                         cell_column = -1;
                         cell_row = -1;
@@ -338,9 +335,8 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
             temp_intersection = findIntersection(sens_pos, end_sensor, wall_start, wall_end, temp_dist_measure, intersection_found);
             if (intersection_found){
                 if (abs(dist_measure-temp_dist_measure) < TOLERANCE_DIST){
-                    if (shortest_dist_measure > temp_dist_measure) {
-                        shortest_dist_measure = temp_dist_measure;
-
+                    if (shortest_dist_measure > abs(dist_measure-temp_dist_measure)) {
+                        shortest_dist_measure = abs(dist_measure-temp_dist_measure);
                         looking_at = '0';
                         cell_column = -1;
                         cell_row = -1;
@@ -375,7 +371,7 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                 labyrinth[cell_column][cell_row-1].update_wall('E', true);
             }
         }
-        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 128);
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_RenderDrawLine(renderer, p1, p2, p3, p4);
     }
 }
@@ -496,6 +492,8 @@ void RobotEst::localization(){
         // # if we are currently turning, don't update
         return;
     }
+
+    // TODO make updates depending on which wall is seen. h always updates y for N&S. h always updates x for W&E
 
     // 1 & 2
     if ((sensL.looking_at == sensL2.looking_at) && sensL.looking_at != '0') {

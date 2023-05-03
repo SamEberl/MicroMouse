@@ -14,7 +14,7 @@
 
 using namespace std;
 
-float KP = 5;
+float KP = 2;
 float KI = 1;
 float KD = 1;
 float PID_MAX = 1.0;
@@ -51,7 +51,17 @@ void PIDController::reset(){
     totalError = 0;
 }
 
-bool findGoal(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], vector<int> goal_cell) {
+Planner::Planner() {
+    start_cell = {LABYRINTH_WIDTH-1, LABYRINTH_HEIGHT-1};
+    current_cell = {LABYRINTH_WIDTH-1, LABYRINTH_HEIGHT-1};
+    goal_found = false;
+    fastest_path_found;
+    point_reached = false;
+    shortest_path_length = 99999;
+    next_point = {-1, -1};
+};
+
+void Planner::findGoal(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
     for (int x = 1; x < LABYRINTH_WIDTH; x++) {
         for (int y = 1; y < LABYRINTH_HEIGHT; y++) {
             
@@ -60,36 +70,26 @@ bool findGoal(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], vector<int> 
                 labyrinth[y-1][x-1].S < THRESHOLD_NO_WALL &&
                 labyrinth[y-1][x-1].E < THRESHOLD_NO_WALL) {
 
+                goal_found = true;
+
                 labyrinth[y][x].is_goal = true;
                 labyrinth[y-1][x].is_goal = true;
                 labyrinth[y][x-1].is_goal = true;
                 labyrinth[y-1][x-1].is_goal = true;
-                goal_cell = {x, y};
-                
+
+                cout << "-----goal-------" << endl;
                 cout << x << ", " << y << endl;
                 cout << x-1 << ", " << y << endl;
                 cout << x-1 << ", " << y-1 << endl;
                 cout << x << ", " << y-1 << endl;
-
-                // cout << !labyrinth[y][x].has_wall('N') << endl;
-                // cout << !labyrinth[y][x].has_wall('W') << endl;
-                // cout << !labyrinth[y][x-1].has_wall('S') << endl;
-                // cout << !labyrinth[y][x-1].has_wall('E') << endl;
-                cout << "_----------------_" << endl;
-
-                return true;
+                cout << "----------------" << endl;
             }
             
         }
     }
-    return false;
 }
 
-
-
-stack<vector<int>> getPath(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], vector<int> start, vector<int> goal) {
-    // if no goal is set just returns the path to the nearest unexplored cell
-    vector<int> no_goal = {-1, -1};
+stack<vector<int>> Planner::getPath(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], vector<int> start, bool to_goal) {
     int grid[LABYRINTH_WIDTH][LABYRINTH_HEIGHT] = {0};
     // Define a queue to store the cells to be checked
     queue<vector<int>> q;
@@ -97,26 +97,40 @@ stack<vector<int>> getPath(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT],
     q.push(start);
     int x;
     int y;
+    bool end_found;
     // Define a map to store the parent of each cell
     map<vector<int>, vector<int>> parent;
-    // Loop until the goal is reached or the queue is empty
+    // Loop until the end is reached or the queue is empty
     while (!q.empty()) {
         // Get the next cell from the queue
         vector<int> current = q.front();
         q.pop();
         x = current[0];
         y = current[1];
-        // Check if the current cell is the goal
-        if (current == goal || (goal == no_goal && !labyrinth[y][x].seen)) {
+
+        // Check if the current cell is the end
+        if (((labyrinth[y][x].is_goal) && to_goal) || (!labyrinth[y][x].seen && !to_goal)) {
             stack<vector<int>> next_points;
-            // Construct the path from the goal to the start
-            next_points.push(current);
-            while (current != start) {
-                current = parent[current];
+            // Construct the path from the end to the start
+
+            // next_points.push(current);
+            if (current != start) {
+                vector<int> waypoint = current;
                 next_points.push(current);
-                // next_points.insert(next_points.begin(), current);
+                current = parent[current];
+                while (current != start) {
+                    if ((waypoint[0] == current[0] && current[0] == parent[current][0]) || (waypoint[1] == current[1] && current[1] == parent[current][1])) {
+                        current = parent[current];
+                    } else {
+                        waypoint = current;
+                        next_points.push(current);
+                        current = parent[current];
+                    }
+                }
+            } else {
+                next_points.push(current);
             }
-            next_points.pop();
+            // next_points.pop();
             printPath(next_points);
             return next_points;
         }
@@ -166,22 +180,118 @@ stack<vector<int>> getPath(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT],
     return stack<vector<int>>();
 } 
 
-void printPath(queue<vector<int>> path) {
-    // Loop until the path is empty
-    while (!path.empty()) {
-        // Get the next cell from the path
-        vector<int> current = path.front();
-        path.pop();
-        // Print the coordinates of the cell
-        cout << "(" << current[0] << ", " << current[1] << ")" << endl;
+stack<vector<int>> Planner::getPathPoint(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], vector<int> start, vector<int> end) {
+    int grid[LABYRINTH_WIDTH][LABYRINTH_HEIGHT] = {0};
+    // Define a queue to store the cells to be checked
+    queue<vector<int>> q;
+    queue<vector<int>> q_next;
+    q.push(start);
+    int x;
+    int y;
+    bool end_found;
+    // Define a map to store the parent of each cell
+    map<vector<int>, vector<int>> parent;
+    // Loop until the end is reached or the queue is empty
+    while (!q.empty()) {
+        // Get the next cell from the queue
+        vector<int> current = q.front();
+        q.pop();
+        x = current[0];
+        y = current[1];
+
+        // Check if the current cell is the end
+        if (current == end) {
+            stack<vector<int>> next_points;
+            // Construct the path from the end to the start
+
+            // next_points.push(current);
+            if (current != start) {
+                vector<int> waypoint = current;
+                next_points.push(current);
+                current = parent[current];
+                while (current != start) {
+                    if ((waypoint[0] == current[0] && current[0] == parent[current][0]) || (waypoint[1] == current[1] && current[1] == parent[current][1])) {
+                        current = parent[current];
+                    } else {
+                        waypoint = current;
+                        next_points.push(current);
+                        current = parent[current];
+                    }
+                }
+            } else {
+                next_points.push(current);
+            }
+            // next_points.pop();
+            printPath(next_points);
+            return next_points;
+        }
+        // Check the north cell
+        if ((y-1) >= 0 && grid[y-1][x] == 0) {
+            if (x!=start[0] || (y-1)!=start[1]){
+                if (labyrinth[y][x].N < 0.2) {
+                    q_next.push({x, y-1});
+                    parent[{x, y-1}] = current;
+                }
+            }
+        }
+        // Check the east cell
+        if (x < LABYRINTH_WIDTH-1 && grid[y][x+1] == 0) {
+            if ((x+1)!=start[0] || y!=start[1]){
+                if (labyrinth[y][x].E < 0.2) {
+                    q_next.push({x+1, y});
+                    parent[{x+1, y}] = current;
+                }
+            }
+        }
+        // Check the south cell
+        if (y < LABYRINTH_HEIGHT-1 && grid[y+1][x] == 0) {
+            if (x!=start[0] || (y+1)!=start[1]){
+                if (labyrinth[y][x].S < 0.2) {
+                    q_next.push({x, y+1});
+                    parent[{x, y+1}] = current;
+                }
+            }
+        }
+        // Check the west cell
+        if ((x-1) >= 0 && grid[y][x-1] == 0) {
+            if ((x-1)!=start[0] || y!=start[1]){
+                if (labyrinth[y][x].W < 0.2) {
+                    q_next.push({x-1, y});
+                    parent[{x-1, y}] = current;
+                }
+            }
+        }
+        // Mark the current cell with the counter
+        grid[y][x] = 1;
+        // Get the next queue
+        if (q.empty()) {
+            swap(q, q_next);
+        }
     }
-    cout << "________________" << endl;
+    return stack<vector<int>>();
+} 
+
+float Planner::calcPathLength(stack<vector<int>> path, vector<int> start) {
+    int length = 0;
+    vector<int> previous = start;
+    vector<int> current = path.top();
+     while (!path.empty()) {
+        length += previous[0] - current[0] + previous[1] - current[1];
+        // Get the next cell from the path
+        // vector<int> current = path.front();
+        previous = current;
+        vector<int> current = path.top();
+        path.pop();
+    }
+    length += previous[0] - current[0] + previous[1] - current[1];
+    return length;
 }
 
-void printPath(stack<vector<int>> path) {
+void Planner::printPath(stack<vector<int>> path) {
     // Loop until the path is empty
     while (!path.empty()) {
         // Get the next cell from the path
+        // vector<int> current = path.front();
         vector<int> current = path.top();
         path.pop();
         // Print the coordinates of the cell
@@ -190,15 +300,6 @@ void printPath(stack<vector<int>> path) {
     cout << "________________" << endl;
 }
 
-
-Planner::Planner() {
-    start_cell = {LABYRINTH_WIDTH-1, LABYRINTH_HEIGHT-1};
-    current_cell = {LABYRINTH_WIDTH-1, LABYRINTH_HEIGHT-1};
-    goal_cell = {-1, -1};
-    goal_found = false;
-    point_reached = false;
-    next_point = {-1, -1};
-};
 
 vector<float> Planner::drive_to(vector<int> next, RobotEst mouseEst, CellEst labyrinthEst[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], PIDController PID){
     float turn_rate;
@@ -239,16 +340,21 @@ vector<float> Planner::drive_to(vector<int> next, RobotEst mouseEst, CellEst lab
         // drive straight
         return vector<float>{this->turnPID.maxOutput, this->turnPID.maxOutput};
     } else {
-        float dot_product = cos(mouseEst.rob_dir)*cos(dir_to_target) + sin(mouseEst.rob_dir)*sin(dir_to_target);
+        // float dot_product = (cos(mouseEst.rob_dir)*cos(dir_to_target) + sin(mouseEst.rob_dir)*sin(dir_to_target)); // * pow(cos(mouseEst.rob_dir - dir_to_target), 2);
+        float dot_product = -2*acos((cos(mouseEst.rob_dir)*cos(dir_to_target) + sin(mouseEst.rob_dir)*sin(dir_to_target)))/M_PI + 1;
         // turn_rate = PID.calculate(0, mouseEst.rob_dir - dir_to_target, 1);
         turn_rate = PID.calculate(1, dot_product, 1);
-        if (turn_rate < 0){
-            turn_rate *= -1;
-        }
+        // if (turn_rate < 0){
+        //     turn_rate *= -1;
+        // }
         float speed_forward = (this->turnPID.maxOutput-turn_rate)/2;
-        // cout << "turn " << endl;
-        // cout << "dir_to_target: " << dir_to_target << endl;
-        if (((mouseEst.rob_dir - dir_to_target) > 0) || ((mouseEst.rob_dir - dir_to_target) < -M_PI)) {
+        float temp_dir = fmod(mouseEst.rob_dir+M_PI, 2*M_PI);
+        if (temp_dir < 0) {
+            temp_dir += 2*M_PI;
+        }
+        float temp_vec_x = cos(mouseEst.rob_dir - dir_to_target);
+        float temp_vec_y = sin(mouseEst.rob_dir - dir_to_target);
+        if (atan2(temp_vec_y, temp_vec_x) > 0) {
             // turn left
             return vector<float>{speed_forward-turn_rate, speed_forward+turn_rate};
         } else {
@@ -263,30 +369,48 @@ vector<float> Planner::update(RobotEst mouseEst, CellEst labyrinthEst[LABYRINTH_
     current_cell[0] = int(round(((mouseEst.rob_pos[0] - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
     current_cell[1] = int(round(((mouseEst.rob_pos[1] - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
     if (!goal_found) {
-        goal_found = findGoal(labyrinthEst, goal_cell);
+        findGoal(labyrinthEst);
     }
     if (next_points.empty()) {
+        point_reached = false;
         if (goal_found) {
-            if (current_cell==start_cell) {
-                next_points = getPath(labyrinthEst, start_cell, goal_cell);
+            if (!false) { // CONTINUE HERE. Make sure new fastest path is found if it exists.
+                stack<vector<int>> temp_path_goal = getPath(labyrinthEst, start_cell, true);
+                stack<vector<int>> temp_path_unexplored = getPath(labyrinthEst, start_cell, false);
+                shortest_path_length = calcPathLength(temp_path_goal, start_cell);
+                float unexplored_path_length = calcPathLength(temp_path_unexplored, start_cell);
+                if (shortest_path_length > unexplored_path_length + 1){
+                    for(int i; i<temp_path_unexplored.size(); i++) {
+                        temp_path_unexplored.pop();
+                    }
+                    next_points = getPathPoint(labyrinthEst, current_cell, temp_path_unexplored.top());
+                } else {
+                    fastest_path_found = true;
+                }
             } else {
-                next_points = getPath(labyrinthEst, current_cell, start_cell);
+                if (current_cell==start_cell) {
+                    next_points = getPath(labyrinthEst, start_cell, true);
+                } else {
+                    next_points = getPathPoint(labyrinthEst, current_cell, start_cell);
+                }
             }
         } else {
-            next_points = getPath(labyrinthEst, current_cell, vector<int>{-1, -1});
+            next_points = getPath(labyrinthEst, current_cell, false);
         }
     } else {
         if (point_reached){
-            next_point = next_points.top();
             next_points.pop();
             point_reached = false;
             turnPID.reset();
+        } else {
+            next_point = next_points.top();
+            // cout << next_point[0] << ", " << next_point[1] << endl;
+            return drive_to(next_point, mouseEst, labyrinthEst, turnPID);
         }
-        // cout << next_point[0] << ", " << next_point[1] << endl;
-        return drive_to(next_point, mouseEst, labyrinthEst, turnPID);
+
     }
     // cout << current_cell[0] << ", " << current_cell[1] << endl;
-    return drive_to(current_cell, mouseEst, labyrinthEst, turnPID);
+    return vector<float>{0, 0};
     
 }
   
