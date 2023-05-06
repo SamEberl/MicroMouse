@@ -199,17 +199,17 @@ void generate_custom_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]
     //                         {0, 0, 0, 1, 0, 0},
     //                         {1, 1, 1, 1, 1, 1}};
 
-// example maze multiple paths
+// // example maze multiple paths
     bool walls_E[6][6] = {  {0, 0, 0, 0, 0, 1},
                             {0, 1, 0, 0, 1, 1},
-                            {0, 0, 0, 0, 0, 1},
+                            {0, 0, 0, 1, 0, 1},
                             {0, 0, 0, 0, 1, 1},
                             {0, 0, 0, 0, 0, 1},
                             {0, 0, 0, 0, 1, 1}};
     bool walls_S[6][6] = {  {0, 1, 1, 1, 1, 0},
                             {0, 0, 1, 0, 1, 0},
                             {1, 1, 0, 1, 1, 0},
-                            {0, 1, 1, 1, 1, 0},
+                            {0, 1, 1, 0, 1, 0},
                             {0, 1, 1, 1, 1, 0},
                             {1, 1, 1, 1, 1, 1}};
 

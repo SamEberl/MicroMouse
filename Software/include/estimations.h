@@ -31,9 +31,8 @@ public:
     vector<float> get_point(char pointNumber) const;
     bool has_wall(char direction) const;
     void update_wall(char direction, bool wallPresent);
-    bool seen;
+    bool is_seen;
     float threshold_seen;
-    bool is_goal;
     float N;
     float E;
     float S;

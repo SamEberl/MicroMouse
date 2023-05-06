@@ -28,9 +28,12 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  float rob_x = (LABYRINTH_WIDTH*(CELL_SIZE + WALL_WIDTH))-(CELL_SIZE/2);
+  int start_x = LABYRINTH_WIDTH-1;
+  int start_y = LABYRINTH_HEIGHT-1;
+
+  float rob_x = (start_x*(CELL_SIZE + WALL_WIDTH))+(CELL_SIZE/2);
   // rob_x = (3*(CELL_SIZE + WALL_WIDTH))-(CELL_SIZE/2);
-  float rob_y = (LABYRINTH_HEIGHT*(CELL_SIZE + WALL_WIDTH))-(CELL_SIZE/2);
+  float rob_y = (start_y*(CELL_SIZE + WALL_WIDTH))+(CELL_SIZE/2);
   // rob_y = (1*(CELL_SIZE + WALL_WIDTH))-(CELL_SIZE/2);
   float rob_dir = M_PI*3/2;
   // rob_dir = M_PI*3.5/2;
@@ -58,7 +61,7 @@ int main(int argc, char *argv[]) {
   // getPath(labyrinthEst, start, {-1, -1});
 
 
-  Planner planner;
+  Planner planner(start_x, start_y);
 
   bool running = true;
   while (running) {
@@ -120,9 +123,7 @@ int main(int argc, char *argv[]) {
     // mouse.updatePosition(0.3 + driveDiff, 0.3 - driveDiff);
 
     vector<float> wheel_speed = planner.update(mouseEst, labyrinthEst);
-    mouse.updatePosition(wheel_speed[0], wheel_speed[1]);
-    
-    
+    mouse.updatePosition(wheel_speed[0], wheel_speed[1]); 
 
     mouse.measureDistances(labyrinth, corners);
     mouseEst.updatePosition(renderer, mouse, labyrinthEst, cornersEst);

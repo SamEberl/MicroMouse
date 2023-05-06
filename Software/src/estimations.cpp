@@ -50,7 +50,7 @@ vector<float> CornerEst::get_point(char pointNumber) const {
     }
 }
 
-CellEst::CellEst() : N(0.5), E(0.5), S(0.5), W(0.5), seen(false), is_goal(false) {}
+CellEst::CellEst() : N(0.5), E(0.5), S(0.5), W(0.5), is_seen(false) {}
 void CellEst::initialize(float row, float col) {
     float x_pos = col * (CELL_SIZE + WALL_WIDTH) + WALL_WIDTH;
     float y_pos = row * (CELL_SIZE + WALL_WIDTH) + WALL_WIDTH;

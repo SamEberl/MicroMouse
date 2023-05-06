@@ -23,10 +23,9 @@ class PIDController {
 
 class Planner {
 public:
-  Planner();
+  Planner(int start_x, int start_y);
   void findGoal(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]);
-  stack<vector<int>> getPath(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], vector<int> start, bool to_goal);
-  stack<vector<int>> getPathPoint(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], vector<int> start, vector<int> end);
+  vector<int> getPath(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], vector<int> start, char go_to);
   float calcPathLength(stack<vector<int>> path, vector<int> start);
   void printPath(stack<vector<int>> path);
   vector<float> drive_to(vector<int> next_point, RobotEst mouseEst, CellEst labyrinthEst[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], PIDController PID);
@@ -35,7 +34,10 @@ public:
   PIDController turnPID;
   vector<int> start_cell;
   vector<int> current_cell;
-  vector <int> next_point;
+  vector<int> goal_1;
+  vector<int> goal_2;
+  vector<int> goal_3;
+  vector<int> goal_4;
   stack<vector<int>> next_points;
   bool goal_found;
   bool fastest_path_found;
