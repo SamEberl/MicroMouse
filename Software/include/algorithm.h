@@ -8,7 +8,6 @@ class PIDController {
     PIDController();
     PIDController(float kp, float ki, float kd, float maxOutput, float minOutput);
     float calculate(float setPoint, float processVariable, float deltaTime);
-    void reset();
 
     float kp;
     float ki;

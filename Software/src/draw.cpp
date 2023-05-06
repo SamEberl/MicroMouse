@@ -84,7 +84,6 @@ void drawRobo(SDL_Renderer *renderer, Robot mouse){
         end_x = mouse.taken_path[i][0];
         end_y = mouse.taken_path[i][1];
 
-        // cout << start_x << ", " << start_y << " ---- " << end_x << ", " << end_y << endl;
         SDL_SetRenderDrawColor(renderer, 0, 200, 0, SDL_ALPHA_OPAQUE);
         SDL_RenderDrawLine(renderer, start_x, start_y, end_x, end_y);
     }

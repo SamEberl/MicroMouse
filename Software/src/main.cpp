@@ -32,11 +32,9 @@ int main(int argc, char *argv[]) {
   int start_y = LABYRINTH_HEIGHT-1;
 
   float rob_x = (start_x*(CELL_SIZE + WALL_WIDTH))+(CELL_SIZE/2);
-  // rob_x = (3*(CELL_SIZE + WALL_WIDTH))-(CELL_SIZE/2);
   float rob_y = (start_y*(CELL_SIZE + WALL_WIDTH))+(CELL_SIZE/2);
-  // rob_y = (1*(CELL_SIZE + WALL_WIDTH))-(CELL_SIZE/2);
   float rob_dir = M_PI*3/2;
-  // rob_dir = M_PI*3.5/2;
+
 
   //SDL wants to have width before height. So to stay consistent it's like this everywhere.
   Robot mouse = Robot(rob_x, rob_y, rob_dir, DISTANCE_WHEELS, MOUSE_WIDTH, MOUSE_HEIGHT);
@@ -52,15 +50,6 @@ int main(int argc, char *argv[]) {
   CornerEst cornersEst[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1];
   init_labyrinth(labyrinthEst);
   init_corners(cornersEst);
-
-  PIDController controller = PIDController(0.7, 0.05, 0.01, 1.0, -1.0);
-
-
-  // int grid[LABYRINTH_WIDTH][LABYRINTH_HEIGHT] = {0};
-  // vector<int> start = {LABYRINTH_WIDTH-1, LABYRINTH_HEIGHT-1};
-  // getPath(labyrinthEst, start, {-1, -1});
-
-
   Planner planner(start_x, start_y);
 
   bool running = true;
@@ -79,48 +68,6 @@ int main(int argc, char *argv[]) {
     drawLabyrinth(renderer, labyrinthEst);
     drawRobo(renderer, mouse);
     drawRobo(renderer, mouseEst);
-
-    // if (mouse.sensS.dist_measure < SENSOR_RANGE*2/5) {
-    //   mouse.updatePosition(-0.5, 0.5);
-    // } else if (mouse.sensR2.dist_measure < SENSOR_RANGE*2/5) {
-    //   mouse.updatePosition(-0.5, 0.5);
-    // } else {
-    //   mouse.updatePosition(0.5, 0.5);
-    // }
-
-    // if (mouseEst.sensS.dist_measure < SENSOR_RANGE*2/5) {
-    //   mouseEst.updatePosition(-0.5, 0.5);
-    // } else if (mouseEst.sensR2.dist_measure < SENSOR_RANGE*2/5) {
-    //   mouseEst.updatePosition(-0.5, 0.5);
-    // } else {
-    //   mouseEst.updatePosition(0.5, 0.5);
-    // }
-
-
-    // if (mouse.sensS.dist_measure < SENSOR_RANGE/4) {
-    //   mouse.updatePosition(-2.5, 2.5);
-    // } else if (mouse.sensR2.dist_measure < SENSOR_RANGE/4) {
-    //   mouse.updatePosition(-2.5, 2.5);
-    // } else {
-    //   mouse.updatePosition(2.5, 2.5);
-    // }
-
-    // if (mouseEst.sensS.dist_measure < SENSOR_RANGE*2/5) {
-    //   mouseEst.updatePosition(-2.5, 2.5);
-    // } else if (mouseEst.sensR2.dist_measure < SENSOR_RANGE*2/5) {
-    //   mouseEst.updatePosition(-2.5, 2.5);
-    // } else {
-    //   mouseEst.updatePosition(2.5, 2.5);
-    // }
-
-    // mouse.updatePosition(-0.05, 0.05);
-    // mouseEst.updatePosition(-0.05, 0.05);
-    // mouse.updatePosition(-0.5, 0.5);
-    // mouseEst.updatePosition(-0.5, 0.5);
-
-    // float dot = 0*cos(mouseEst.rob_dir) + sin(mouseEst.rob_dir);
-    // float driveDiff = controller.calculate(1, dot, 1);
-    // mouse.updatePosition(0.3 + driveDiff, 0.3 - driveDiff);
 
     vector<float> wheel_speed = planner.update(mouseEst, labyrinthEst);
     mouse.updatePosition(wheel_speed[0], wheel_speed[1]); 

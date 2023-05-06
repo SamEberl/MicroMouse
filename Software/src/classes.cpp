@@ -2,11 +2,10 @@
 #include <vector>
 #include <stdio.h>
 #include <iostream>
-#include <queue>
+#include <SDL2/SDL.h>
 #include "classes.h"
 #include "defs.h"
 #include "utils.h"
-#include <SDL2/SDL.h>
 
 #define _USE_MATH_DEFINES
 
@@ -46,6 +45,7 @@ vector<float> Corner::get_point(char pointNumber) const {
 }
 
 Cell::Cell() : N(true), E(true), S(true), W(true), seen(false) {}
+
 void Cell::initialize(float row_, float col_) {
     row = row_;
     col = col_;
@@ -56,38 +56,6 @@ void Cell::initialize(float row_, float col_) {
     this->p2 = {(x_pos+CELL_SIZE), y_pos};
     this->p3 = {(x_pos+CELL_SIZE), (y_pos+CELL_SIZE)};
     this->p4 = {x_pos, (y_pos+CELL_SIZE)};
-}
-int Cell::get_row() const {return row;};
-int Cell::get_col() const {return col;};
-
-vector<float> Cell::get_point(char pointNumber) const {
-    switch (pointNumber) {
-        case '1':
-            return p1;
-        case '2':
-            return p2;
-        case '3':
-            return p3;
-        case '4':
-            return p4;
-        default:
-            throw invalid_argument("Invalid point number");
-    }
-}
-
-bool Cell::has_wall(char direction) const {
-    switch (direction) {
-        case 'N':
-            return N;
-        case 'E':
-            return E;
-        case 'S':
-            return S;
-        case 'W':
-            return W;
-        default:
-            return true;
-    }
 }
 
 void Cell::remove_wall(char direction) {
@@ -107,9 +75,43 @@ void Cell::remove_wall(char direction) {
     }
 }
 
+void Cell::set_seen(bool value) {seen = value;}
+
 bool Cell::is_seen() const {return seen;}
 
-void Cell::set_seen(bool value) {seen = value;}
+bool Cell::has_wall(char direction) const {
+    switch (direction) {
+        case 'N':
+            return N;
+        case 'E':
+            return E;
+        case 'S':
+            return S;
+        case 'W':
+            return W;
+        default:
+            return true;
+    }
+}
+
+int Cell::get_row() const {return row;};
+
+int Cell::get_col() const {return col;};
+
+vector<float> Cell::get_point(char pointNumber) const {
+    switch (pointNumber) {
+        case '1':
+            return p1;
+        case '2':
+            return p2;
+        case '3':
+            return p3;
+        case '4':
+            return p4;
+        default:
+            throw invalid_argument("Invalid point number");
+    }
+}
 
 Sensor::Sensor() {
     dist_measure = SENSOR_RANGE;
@@ -250,29 +252,31 @@ Robot::Robot(float x, float y, float direction_, float distance_wheels_, float w
 }
 
 void Robot::updatePosition(float speedLeft_, float speedRight_) {
-    float deltaTime = 1; //Param?
+    float deltaTime = 1;
     float wheelRadius = 1;
     float velocity;
     float angularVelocity;
     speedLeft = speedLeft_ + gaussianNoise(0, SPEED_VAR);
     speedRight = speedRight_ + + gaussianNoise(0, SPEED_VAR);
-    // Calculate the new position of the robot
+
+    // Calculate velocities
     velocity = wheelRadius * (speedLeft + speedRight) / 2;
     angularVelocity = wheelRadius * (speedLeft - speedRight) / distance_wheels;
+
+    // Calc robot direction and move it between 0 and 2PI
     rob_dir = fmod(rob_dir + angularVelocity * deltaTime, 2*M_PI);
     if (rob_dir < 0) {
         rob_dir += 2*M_PI;
     }
+
+    // Calc robot position
     rob_pos[0] += velocity * cos(rob_dir) * deltaTime;
     rob_pos[1] += velocity * sin(rob_dir) * deltaTime;
 
-    // cout << rob_pos[0] << ", " << rob_pos[1] << endl;
-
+    // Remeber taken path for visualization
     if (distBetweenPoints(rob_pos, taken_path.back())>10) {    
        taken_path.push_back(rob_pos);
     }
-
-
 
     // Calculate the new position of the sensors
     sensR.updatePosition(rob_pos, rob_dir);

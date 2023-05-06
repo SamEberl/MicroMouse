@@ -2,11 +2,11 @@
 #include <vector>
 #include <stdio.h>
 #include <iostream>
+#include <SDL2/SDL.h>
 #include "estimations.h"
 #include "defs.h"
 #include "utils.h"
 #include "classes.h"
-#include <SDL2/SDL.h>
 
 #define _USE_MATH_DEFINES
 
@@ -51,6 +51,7 @@ vector<float> CornerEst::get_point(char pointNumber) const {
 }
 
 CellEst::CellEst() : N(0.5), E(0.5), S(0.5), W(0.5), is_seen(false) {}
+
 void CellEst::initialize(float row, float col) {
     float x_pos = col * (CELL_SIZE + WALL_WIDTH) + WALL_WIDTH;
     float y_pos = row * (CELL_SIZE + WALL_WIDTH) + WALL_WIDTH;
@@ -73,18 +74,20 @@ void CellEst::initialize(float row, float col) {
     }
 }
 
-vector<float> CellEst::get_point(char pointNumber) const {
-    switch (pointNumber) {
-        case '1':
-            return p1;
-        case '2':
-            return p2;
-        case '3':
-            return p3;
-        case '4':
-            return p4;
-        default:
-            throw invalid_argument("Invalid point number");
+void CellEst::update_wall(char direction, bool wallPresent) {
+    switch (direction) {
+        case 'N':
+            N = WALL_RETAIN*N + (1-WALL_RETAIN)*wallPresent;
+            break;
+        case 'E':
+            E = WALL_RETAIN*E + (1-WALL_RETAIN)*wallPresent;
+            break;
+        case 'S':
+            S = WALL_RETAIN*S + (1-WALL_RETAIN)*wallPresent;
+            break;
+        case 'W':
+            W = WALL_RETAIN*W + (1-WALL_RETAIN)*wallPresent;
+            break;
     }
 }
 
@@ -107,20 +110,18 @@ bool CellEst::has_wall(char direction) const {
     }
 }
 
-void CellEst::update_wall(char direction, bool wallPresent) {
-    switch (direction) {
-        case 'N':
-            N = WALL_RETAIN*N + (1-WALL_RETAIN)*wallPresent;
-            break;
-        case 'E':
-            E = WALL_RETAIN*E + (1-WALL_RETAIN)*wallPresent;
-            break;
-        case 'S':
-            S = WALL_RETAIN*S + (1-WALL_RETAIN)*wallPresent;
-            break;
-        case 'W':
-            W = WALL_RETAIN*W + (1-WALL_RETAIN)*wallPresent;
-            break;
+vector<float> CellEst::get_point(char pointNumber) const {
+    switch (pointNumber) {
+        case '1':
+            return p1;
+        case '2':
+            return p2;
+        case '3':
+            return p3;
+        case '4':
+            return p4;
+        default:
+            throw invalid_argument("Invalid point number");
     }
 }
 
@@ -347,8 +348,6 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
         }
     }
 
-    // cout << "intersection: " << intersection[0] << ", " << intersection[1] << endl;
-
     if (looking_at != '0') {
         labyrinth[cell_column][cell_row].update_wall(looking_at, true);
         if (looking_at == 'N') {
@@ -391,17 +390,15 @@ RobotEst::RobotEst(float x, float y, float direction_, float distance_wheels_, f
     sensL.init(rob_pos, rob_dir, -M_PI/2, width/2);
 }
 
-void RobotEst::get_offset_left(float& height, float& angle_rel, float alpha=M_PI/4, float beta=M_PI/2){
-    //   # alpha = angle between e1 and e2
-    //   # beta = angle between e1 and forward direction (=e3)
-    //   # get L 
+void RobotEst::get_offset_left(float& height, float& angle_rel, float alpha=M_PI/4){
+    // alpha = angle between e1 and e2
     float dist_e1 = sensL.dist_measure + sensL.offset_position;
     float dist_e2 = sensL2.dist_measure + sensL2.offset_position;
     float L = sqrt( pow(dist_e2 * cos(alpha) - dist_e1, 2) + pow(dist_e2*sin(alpha), 2)) ;
-    //   # Heron's Formula to get Area based on side lengths only
+    // Heron's Formula to get Area based on side lengths only
     float s = (dist_e1 + dist_e2 + L)/2;
     float A = sqrt( s * (s-dist_e1) * (s-dist_e2) * (s-L) );
-    //   # use regular A = 1/2 * L * h (with h = offset)
+    // use regular A = 1/2 * L * h (with h = offset)
     height = (2*A)/L;
 
     angle_rel = acos(max(min(height/dist_e1, 1.0f), -1.0f));
@@ -411,10 +408,8 @@ void RobotEst::get_offset_left(float& height, float& angle_rel, float alpha=M_PI
 
   }
 
-void RobotEst::get_offset_right(float& height, float& angle_rel, float alpha=M_PI/4, float beta=-M_PI/2){
+void RobotEst::get_offset_right(float& height, float& angle_rel, float alpha=M_PI/4){
     //   # alpha = angle between e4 and e5
-    //   # beta = angle between e5 and forward direction (=e3)
-    //   # get L 
     float dist_e4 = sensR2.dist_measure + sensR2.offset_position;
     float dist_e5 = sensR.dist_measure + sensR.offset_position;
     float L = sqrt( pow(dist_e4 * cos(alpha) - dist_e5, 2) + pow(-dist_e4*sin(alpha), 2) );
@@ -423,13 +418,6 @@ void RobotEst::get_offset_right(float& height, float& angle_rel, float alpha=M_P
     float A = sqrt( s * (s-dist_e5) * (s-dist_e4) * (s-L) );
     //   # use regular A = 1/2 * L * h
     height = (2*A)/L;
-
-    // gamma = acos(max(min(h/dist_e5, 1.0f), -1.0f));
-    // if (dist_e4*cos(alpha) < dist_e5){
-    //     angle_rel = 2*M_PI + beta + gamma;
-    // } else {
-    //     angle_rel = 2*M_PI + beta - gamma;
-    // }
 
     angle_rel = acos(max(min(height/dist_e5, 1.0f), -1.0f));
     if (dist_e4*cos(alpha) < dist_e5){}
@@ -463,7 +451,6 @@ void RobotEst::get_offset_front_right(float& height, float& angle_rel, float alp
     height = (2*A)/L;
 
     angle_rel = acos(max(min(height/dist_e3, 1.0f), -1.0f));
-    // cout << "L: " << L << "  s: " << s << "  A: " << A << "  dist_e4: " << dist_e4 << "  dist_e3: " << dist_e3 << "  height: " << height << "   angle_rel: " << angle_rel << endl;
     if (dist_e4*cos(alpha) < dist_e3){
         angle_rel *= -1;
     } else {}
@@ -479,7 +466,7 @@ void RobotEst::localization(){
     vector <float> temp_rob_pos = {0, 0};
     float temp_rob_dir = 0; 
 
-    //   # determine in which direction we are driving
+    // determine in which direction we are driving
     if (((2*M_PI - L_ERROR_BAND) < rob_dir) || (rob_dir < L_ERROR_BAND)) { //# yes, it is 'or'
         driving_dir = 'E';
     } else if ((3*M_PI/2 - L_ERROR_BAND < rob_dir) && (rob_dir < 3*M_PI/2 + L_ERROR_BAND)) {
@@ -489,7 +476,7 @@ void RobotEst::localization(){
     } else if ((M_PI/2 - L_ERROR_BAND < rob_dir) && (rob_dir < M_PI/2 + L_ERROR_BAND)) {
         driving_dir = 'S';
     } else {
-        // # if we are currently turning, don't update
+    // if we are currently turning, don't update
         return;
     }
 
@@ -497,8 +484,7 @@ void RobotEst::localization(){
 
     // 1 & 2
     if ((sensL.looking_at == sensL2.looking_at) && sensL.looking_at != '0') {
-        get_offset_left(height, angle_rel, M_PI/4, M_PI/2);
-        // # updating
+        get_offset_left(height, angle_rel, M_PI/4);
         if((height != height) || (angle_rel != angle_rel)){
             cout << "NAN found!" << endl;
         }
@@ -572,7 +558,6 @@ void RobotEst::localization(){
     // 3 & 4
     if (sensS.looking_at == sensR2.looking_at && sensS.looking_at != '0') {
         get_offset_front_right(height, angle_rel, M_PI/4);
-        // # updating
         if((height != height) || (angle_rel != angle_rel)){
             cout << "NAN found!" << endl;
         }
@@ -607,8 +592,7 @@ void RobotEst::localization(){
 
     // 4 & 5
     if ((sensR2.looking_at == sensR.looking_at) && sensR2.looking_at != '0'){
-        get_offset_right(height, angle_rel, M_PI/4, -M_PI/2);
-        // # updating
+        get_offset_right(height, angle_rel, M_PI/4);
         if((height != height) || (angle_rel != angle_rel)){
             cout << "NAN found!" << endl;
             return;
@@ -644,10 +628,8 @@ void RobotEst::localization(){
     }
 
     if (num_updates >= 1){
-        // cout << "before: " << rob_pos[0] << ", " << rob_pos[1] << endl;
         rob_pos[0] = (1-L_SMOOTHING)*rob_pos[0] + L_SMOOTHING*(temp_rob_pos[0]/num_updates);
         rob_pos[1] = (1-L_SMOOTHING)*rob_pos[1] + L_SMOOTHING*(temp_rob_pos[1]/num_updates);
-        // cout << "after: " << rob_pos[0] << ", " << rob_pos[1] << endl;
         rob_dir = (1-L_SMOOTHING)*rob_dir + L_SMOOTHING*(round(rob_dir/M_PI_2)*M_PI_2 + ((temp_rob_dir/num_updates)-M_PI));
 
         rob_dir = fmod(rob_dir, 2*M_PI);
@@ -657,7 +639,7 @@ void RobotEst::localization(){
     }
 
     // update distance to front wall if one is seen.
-    float distance; //TODO estimation is beeing pushed back due to imagining walls at max sensor range.
+    float distance;
     if (sensS.looking_at != '0'){
         if (sensS.looking_at == 'N') {
             distance = (sensS.dist_measure + sensS.offset_position) * cos(sensS.sens_dir - 3*M_PI_2);
@@ -738,12 +720,10 @@ void RobotEst::updatePosition(SDL_Renderer *renderer, Robot mouse, CellEst labyr
     velocity = wheelRadius * (speedLeft + speedRight) / 2;
     angularVelocity = wheelRadius * (speedLeft - speedRight) / distance_wheels;
 
-    // cout << "before: " << rob_dir;
     rob_dir = fmod(rob_dir + angularVelocity * deltaTime, 2*M_PI);
     if (rob_dir < 0) {
         rob_dir += 2*M_PI;
     }
-    // cout << "   after: " << rob_dir << endl;
     rob_pos[0] += velocity * cos(rob_dir) * deltaTime;
     rob_pos[1] += velocity * sin(rob_dir) * deltaTime;
 
@@ -753,5 +733,4 @@ void RobotEst::updatePosition(SDL_Renderer *renderer, Robot mouse, CellEst labyr
     sensS.updatePosition(rob_pos, rob_dir);
     sensL2.updatePosition(rob_pos, rob_dir);
     sensL.updatePosition(rob_pos, rob_dir);
-    // cout << sensR.looking_at << " " << sensR.intersection[0] << "," << sensR.intersection[1] << endl;
 }
