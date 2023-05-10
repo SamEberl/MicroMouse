@@ -2,10 +2,8 @@
 #include <vector>
 #include <stdio.h>
 #include <iostream>
-#include <list>
 #include <queue>
 #include <stack>
-#include <set>
 #include <map>
 #include "defs.h"
 #include "utils.h"
@@ -278,7 +276,7 @@ vector<float> Planner::update(RobotEst mouseEst, CellEst labyrinthEst[LABYRINTH_
         if (goal_found) {
             if (fastest_path_found) {
                 if (current_cell==start_cell) {
-                    getPath(labyrinthEst, start_cell, 'G'); // problem here
+                    getPath(labyrinthEst, start_cell, 'G');
                 } else {
                     getPath(labyrinthEst, current_cell, 'S');
                 }
@@ -293,7 +291,7 @@ vector<float> Planner::update(RobotEst mouseEst, CellEst labyrinthEst[LABYRINTH_
                 float unexplored_path_length = calcPathLength(next_points, current_cell);
                 int manhatten_to_start = abs(next_unexplored[0]-start_cell[0])+abs(next_unexplored[1]-start_cell[1]);
 
-                if(shortest_path_length <= (unexplored_path_length + manhatten_to_start)){
+                if(shortest_path_length <= (unexplored_path_length + manhatten_to_start + 1)){
                     fastest_path_found = true;
                     stack<vector<int>> empty;
                     swap(next_points, empty);
@@ -314,9 +312,7 @@ vector<float> Planner::update(RobotEst mouseEst, CellEst labyrinthEst[LABYRINTH_
         }
 
     }
-    // cout << current_cell[0] << ", " << current_cell[1] << endl;
     return vector<float>{0, 0};
-    
 }
   
 

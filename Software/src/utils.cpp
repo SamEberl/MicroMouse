@@ -138,13 +138,6 @@ void generate_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], Corne
 void generate_custom_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT], Corner corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]) {
     init_labyrinth(labyrinth);
     init_corners(corners);
-    // bool walls_E[6][6] = {  {true, true, true, true, 1, 1},
-    //                         {true, true, true, true, 1, 1},
-    //                         {true, true, true, true, 1, 1},
-    //                         {true, true, true, true, 1, 1},
-    //                         {true, true, true, true, 1, 1},
-    //                         {true, true, true, true, 1, 1}};
-
     // bool walls_E[6][6] = {  {0, 0, 0, 0, 0, 0},
     //                         {0, 0, 0, 0, 0, 0},
     //                         {0, 0, 0, 0, 0, 0},
@@ -215,7 +208,6 @@ void generate_custom_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]
 
     for (int i = 0; i < LABYRINTH_HEIGHT; i++) {
         for (int j = 0; j < LABYRINTH_WIDTH; j++) {
-            // cout << walls_W[i][j];
             if (!walls_E[i][j]) {
                 labyrinth[i][j].remove_wall('E');
                 labyrinth[i][j+1].remove_wall('W');

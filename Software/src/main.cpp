@@ -31,8 +31,8 @@ int main(int argc, char *argv[]) {
   int start_x = LABYRINTH_WIDTH-1;
   int start_y = LABYRINTH_HEIGHT-1;
 
-  float rob_x = (start_x*(CELL_SIZE + WALL_WIDTH))+(CELL_SIZE/2);
-  float rob_y = (start_y*(CELL_SIZE + WALL_WIDTH))+(CELL_SIZE/2);
+  float rob_x = (start_x*(CELL_SIZE + WALL_WIDTH))+(CELL_SIZE/2)+WALL_WIDTH;
+  float rob_y = (start_y*(CELL_SIZE + WALL_WIDTH))+(CELL_SIZE/2)+WALL_WIDTH;
   float rob_dir = M_PI*3/2;
 
 
