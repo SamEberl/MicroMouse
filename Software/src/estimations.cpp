@@ -27,6 +27,7 @@ float L_SMOOTHING=0.03; //smoothing for localization
 
 CornerEst::CornerEst() {}
 void CornerEst::initialize(float row, float col) {
+    p1.resize(2);
     float x_pos = col * (CELL_SIZE + WALL_WIDTH);
     float y_pos = row * (CELL_SIZE + WALL_WIDTH);
     // Points start in top left corner of cell and go clockwise
@@ -168,6 +169,9 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
     vector<float> wall_start;
     vector<float> wall_end;
 
+    vector<int> curr_cell = getCellFromPos(rob_pos);
+
+
     float p1;
     float p2;
     float p3;
@@ -185,8 +189,8 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                             shortest_dist_measure = abs(dist_measure-temp_dist_measure);
                             if ((distBetweenPoints(temp_intersection, wall_start) > MIN_CORNER_DIST) && (distBetweenPoints(temp_intersection, wall_end) > MIN_CORNER_DIST)){
                                 looking_at = 'N';
-                                cell_column = i;
-                                cell_row = j;
+                                cell_column = j;
+                                cell_row = i;
                                 intersection = temp_intersection;
                                 p1 = wall_start[0];
                                 p2 = wall_start[1];
@@ -212,8 +216,8 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                             shortest_dist_measure = abs(dist_measure-temp_dist_measure);
                             if ((distBetweenPoints(temp_intersection, wall_start) > MIN_CORNER_DIST) && (distBetweenPoints(temp_intersection, wall_end) > MIN_CORNER_DIST)){
                                 looking_at = 'E';
-                                cell_column = i;
-                                cell_row = j;
+                                cell_column = j;
+                                cell_row = i;
                                 intersection = temp_intersection;
                                 p1 = wall_start[0];
                                 p2 = wall_start[1];
@@ -239,8 +243,8 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                             shortest_dist_measure = abs(dist_measure-temp_dist_measure);
                             if ((distBetweenPoints(temp_intersection, wall_start) > MIN_CORNER_DIST) && (distBetweenPoints(temp_intersection, wall_end) > MIN_CORNER_DIST)){
                                 looking_at = 'S';
-                                cell_column = i;
-                                cell_row = j;
+                                cell_column = j;
+                                cell_row = i;
                                 intersection = temp_intersection;
                                 p1 = wall_start[0];
                                 p2 = wall_start[1];
@@ -266,8 +270,8 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
                             shortest_dist_measure = abs(dist_measure-temp_dist_measure);
                             if ((distBetweenPoints(temp_intersection, wall_start) > MIN_CORNER_DIST) && (distBetweenPoints(temp_intersection, wall_end) > MIN_CORNER_DIST)){
                                 looking_at = 'W';
-                                cell_column = i;
-                                cell_row = j;
+                                cell_column = j;
+                                cell_row = i;
                                 intersection = temp_intersection;
                                 p1 = wall_start[0];
                                 p2 = wall_start[1];
@@ -348,55 +352,55 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
         }
     }
 
+    // Switch wall if "wrong" side is assumed to be seen
     if (looking_at !='0') {
-        // TODO find bug thats probably from here
-        vector<int> current_cell = getCellFromPos(rob_pos);
         if (looking_at == 'N') {
-            if (cell_column == current_cell[1]+1) {
+            if (cell_row > curr_cell[1]) {
                 looking_at = 'S';
-                cell_column += 1;
-            }
-        }
-        if (looking_at == 'E') {
-            if ((cell_row == current_cell[0]-1)) {
-                looking_at = 'W';
                 cell_row -= 1;
             }
         }
+        if (looking_at == 'E') {
+            if ((cell_column < curr_cell[0])) {
+                looking_at = 'W';
+                cell_column += 1;
+            }
+        }
         if (looking_at == 'S') {
-            if (cell_column == current_cell[1]-1) {
+            if (cell_row < curr_cell[1]) {
                 looking_at = 'N';
-                cell_column -= 1;
+                cell_row += 1;
             }
         }
         if (looking_at == 'W') {
-            if (cell_row == current_cell[0]+1) {
+            if (cell_column > curr_cell[0]) {
                 looking_at = 'E';
-                cell_row += 1;
+                cell_column -= 1;
             }
         }
     }
 
+    // update wall that is seen and it's opposite side
     if (looking_at != '0') {
-        labyrinth[cell_column][cell_row].update_wall(looking_at, true);
+        labyrinth[cell_row][cell_column].update_wall(looking_at, true);
         if (looking_at == 'N') {
-            if ((cell_column-1) >= 0) {
-                labyrinth[cell_column-1][cell_row].update_wall('S', true);
+            if ((cell_row-1) >= 0) {
+                labyrinth[cell_row-1][cell_column].update_wall('S', true);
             }
         }
         if (looking_at == 'E') {
-            if ((cell_row+1) < LABYRINTH_WIDTH) {
-                labyrinth[cell_column][cell_row+1].update_wall('W', true);
+            if ((cell_column+1) < LABYRINTH_WIDTH) {
+                labyrinth[cell_row][cell_column+1].update_wall('W', true);
             }
         }
         if (looking_at == 'S') {
-            if ((cell_column+1) < LABYRINTH_HEIGHT) {
-                labyrinth[cell_column+1][cell_row].update_wall('N', true);
+            if ((cell_row+1) < LABYRINTH_HEIGHT) {
+                labyrinth[cell_row+1][cell_column].update_wall('N', true);
             }
         }
         if (looking_at == 'W') {
-            if ((cell_row-1) >= 0) {
-                labyrinth[cell_column][cell_row-1].update_wall('E', true);
+            if ((cell_column-1) >= 0) {
+                labyrinth[cell_row][cell_column-1].update_wall('E', true);
             }
         }
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
