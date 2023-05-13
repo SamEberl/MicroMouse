@@ -1,5 +1,5 @@
 #include "xc.h"
-#include "IOconfig.h"
+#include "ioconfig.h"
 #include "general.h"
 #include "io_public.h"
 

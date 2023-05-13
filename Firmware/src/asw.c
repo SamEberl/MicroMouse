@@ -33,5 +33,5 @@ void asw_10ms(void){
         setLEDState(2,OFF);
     }
     setASWStatus(statusAsw);
-    setMotorVelocity(MOTOR_L,statusAsw);
+    //setMotorVelocity(MOTOR_L,statusAsw);
 }

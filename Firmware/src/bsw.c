@@ -22,11 +22,11 @@ void bsw_init(void) {
     SEN3 = SENOFF;
     SEN4 = SENOFF;
     SEN5 = SENOFF;
-    //init_vl6180x(1);
+    init_vl6180x(1);
     init_vl6180x(2);
-    //init_vl6180x(3);
+    init_vl6180x(3);
     init_vl6180x(4);
-    //init_vl6180x(5);
+    init_vl6180x(5);
     
     uartTp_registerUpdateFunc(sensor1, &getSensor1Data);
     uartTp_registerUpdateFunc(sensor2, &getSensor2Data);
