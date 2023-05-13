@@ -179,32 +179,32 @@ void generate_custom_labyrinth(Cell labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]
     //                         {1, 1, 1, 1, 1, 1}};
 
 // example maze
-    // bool walls_E[6][6] = {  {0, 0, 0, 1, 1, 1},
-    //                         {0, 0, 0, 0, 1, 1},
-    //                         {0, 1, 1, 1, 0, 1},
-    //                         {0, 0, 1, 1, 0, 1},
-    //                         {1, 1, 1, 0, 0, 1},
-    //                         {0, 1, 0, 0, 1, 1}};
-    // bool walls_S[6][6] = {  {1, 1, 0, 1, 0, 0},
-    //                         {0, 0, 0, 0, 1, 1},
-    //                         {1, 1, 0, 0, 1, 0},
-    //                         {0, 1, 0, 0, 0, 1},
-    //                         {0, 0, 0, 1, 0, 0},
-    //                         {1, 1, 1, 1, 1, 1}};
+    bool walls_E[6][6] = {  {0, 0, 0, 1, 1, 1},
+                            {0, 0, 0, 0, 1, 1},
+                            {0, 1, 1, 1, 0, 1},
+                            {0, 0, 1, 1, 0, 1},
+                            {1, 1, 1, 0, 0, 1},
+                            {0, 1, 0, 0, 1, 1}};
+    bool walls_S[6][6] = {  {1, 1, 0, 1, 0, 0},
+                            {0, 0, 0, 0, 1, 1},
+                            {1, 1, 0, 0, 1, 0},
+                            {0, 1, 0, 0, 0, 1},
+                            {0, 0, 0, 1, 0, 0},
+                            {1, 1, 1, 1, 1, 1}};
 
 // // example maze multiple paths
-    bool walls_E[6][6] = {  {0, 0, 0, 0, 0, 1},
-                            {0, 1, 0, 0, 1, 1},
-                            {0, 0, 0, 1, 0, 1},
-                            {0, 0, 0, 0, 1, 1},
-                            {0, 0, 0, 0, 0, 1},
-                            {0, 0, 0, 0, 1, 1}};
-    bool walls_S[6][6] = {  {0, 1, 1, 1, 1, 0},
-                            {0, 0, 1, 0, 1, 0},
-                            {1, 1, 0, 1, 1, 0},
-                            {0, 1, 1, 0, 1, 0},
-                            {0, 1, 1, 1, 1, 0},
-                            {1, 1, 1, 1, 1, 1}};
+    // bool walls_E[6][6] = {  {0, 0, 0, 0, 0, 1},
+    //                         {0, 1, 0, 0, 1, 1},
+    //                         {0, 0, 0, 1, 0, 1},
+    //                         {0, 0, 0, 0, 1, 1},
+    //                         {0, 0, 0, 0, 0, 1},
+    //                         {0, 0, 0, 0, 1, 1}};
+    // bool walls_S[6][6] = {  {0, 1, 1, 1, 1, 0},
+    //                         {0, 0, 1, 0, 1, 0},
+    //                         {1, 1, 0, 1, 1, 0},
+    //                         {0, 1, 1, 0, 1, 0},
+    //                         {0, 1, 1, 1, 1, 0},
+    //                         {1, 1, 1, 1, 1, 1}};
 
     for (int i = 0; i < LABYRINTH_HEIGHT; i++) {
         for (int j = 0; j < LABYRINTH_WIDTH; j++) {
@@ -287,4 +287,11 @@ vector<float> findIntersection(vector<float> starting_point,
         distance_to_intersection = -1.0;
         return vector<float>{-1.0, -1.0};
     }
+}
+
+vector<int> getCellFromPos(vector<float> rob_pos) {
+    vector<int> current_cell = {0, 0};
+    current_cell[0] = int(round(((rob_pos[0] - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
+    current_cell[1] = int(round(((rob_pos[1] - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
+    return current_cell;
 }

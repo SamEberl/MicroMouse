@@ -348,6 +348,35 @@ void SensorEst::compareDistanceToWall(SDL_Renderer *renderer, vector<float>& rob
         }
     }
 
+    if (looking_at !='0') {
+        // TODO find bug thats probably from here
+        vector<int> current_cell = getCellFromPos(rob_pos);
+        if (looking_at == 'N') {
+            if (cell_column == current_cell[1]+1) {
+                looking_at = 'S';
+                cell_column += 1;
+            }
+        }
+        if (looking_at == 'E') {
+            if ((cell_row == current_cell[0]-1)) {
+                looking_at = 'W';
+                cell_row -= 1;
+            }
+        }
+        if (looking_at == 'S') {
+            if (cell_column == current_cell[1]-1) {
+                looking_at = 'N';
+                cell_column -= 1;
+            }
+        }
+        if (looking_at == 'W') {
+            if (cell_row == current_cell[0]+1) {
+                looking_at = 'E';
+                cell_row += 1;
+            }
+        }
+    }
+
     if (looking_at != '0') {
         labyrinth[cell_column][cell_row].update_wall(looking_at, true);
         if (looking_at == 'N') {

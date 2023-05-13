@@ -267,8 +267,7 @@ vector<float> Planner::drive_to(vector<int> next, RobotEst mouseEst, CellEst lab
 
 
 vector<float> Planner::update(RobotEst mouseEst, CellEst labyrinthEst[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
-    current_cell[0] = int(round(((mouseEst.rob_pos[0] - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
-    current_cell[1] = int(round(((mouseEst.rob_pos[1] - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
+    vector<int> current_cell = getCellFromPos(mouseEst.rob_pos);
     if (next_points.empty()) {
         if (!goal_found) {
             findGoal(labyrinthEst);

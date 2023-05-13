@@ -24,6 +24,7 @@ vector<float> findIntersection(vector<float> starting_point,
                                 vector<float> wall_point2,
                                 float& distance_to_intersection, 
                                 bool& intersection_found);
+vector<int> getCellFromPos(vector<float> rob_pos);
 
 
 #endif
