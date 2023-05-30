@@ -468,8 +468,7 @@ void RobotEst::localization(){
     }
 
     // TODO make updates depending on which wall is seen. h always updates y for N&S. h always updates x for W&E
-    // TODO make sure that if below a wall only north side is predicted to be seen. Not south side. etc.
-
+    
     // 1 & 2
     if ((sensL.looking_at == sensL2.looking_at) && sensL.looking_at != '0') {
         float dist_s1 = sensL.dist_measure + sensL.offset_position;
