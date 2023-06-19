@@ -4,7 +4,7 @@
 #include "estimations.h"
 
 
-float distBetweenPoints(Point p1, Point p2){
+float distBetweenPoints(Point& p1, Point& p2){
   // function to get distance between two points
   float dist_x, dist_y;
   dist_x = p2.x - p1.x;
@@ -13,9 +13,9 @@ float distBetweenPoints(Point p1, Point p2){
 }
 
 
-void getCellFromPos(Point rob_pos, Point* current_cell) {
-    current_cell->x = int(round(((rob_pos.x - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
-    current_cell->y = int(round(((rob_pos.y - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
+void getCellFromPos(Point pos, Point* current_cell) {
+    current_cell->x = int(round(((pos.x - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
+    current_cell->y = int(round(((pos.y - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
 }
 
 
@@ -57,12 +57,11 @@ void findIntersection(Point starting_point,
 }
 
 
-// -------------------------------------------------
-
 void init_labyrinth(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
     for (int i = 0; i < LABYRINTH_WIDTH; i++) {
         for (int j = 0; j < LABYRINTH_HEIGHT; j++) {
-            labyrinth[i][j].initialize(i, j);
+            CellEst_initialize(&labyrinth[i][j], i, j);
+            // labyrinth[i][j].initialize(i, j);
 
         }
     }
@@ -71,7 +70,8 @@ void init_labyrinth(CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
 void init_corners(CornerEst corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]) {
     for (int i = 0; i < LABYRINTH_WIDTH+1; i++) {
         for (int j = 0; j < LABYRINTH_HEIGHT+1; j++) {
-            corners[i][j].initialize(i, j);
+            CornerEst_initialize(&corners[i][j], i, j);
+            // corners[i][j].initialize(i, j);
         }
     }
 }

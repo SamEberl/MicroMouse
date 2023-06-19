@@ -1,5 +1,3 @@
-#include "estimations.h"
-
 #ifndef UTILS_H
 #define UTILS_H
 
@@ -10,15 +8,15 @@ typedef struct {
 } Point;
 
 
-float distBetweenPoints(Point p1, Point p2)
-void getCellFromPos(Point rob_pos, Point* current_cell)
+float distBetweenPoints(Point& p1, Point& p2);
+void getCellFromPos(Point& rob_pos, Point& current_cell);
 void findIntersection(Point starting_point, 
                       Point end_point, 
                       Point wall_point1, 
                       Point wall_point2,
                       float* distance_to_intersection, 
                       bool* intersection_found, 
-                      Point* intersection_point)
+                      Point* intersection_point);
 
 //--------------------------------------------------------------------------------
 
