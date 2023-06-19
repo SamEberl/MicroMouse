@@ -1,11 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-/* Define Point structure */
-typedef struct {
-    float x;
-    float y;
-} Point;
+#include "defs.h"
 
 
 float distBetweenPoints(Point& p1, Point& p2);
