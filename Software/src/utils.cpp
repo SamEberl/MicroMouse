@@ -3,6 +3,8 @@
 #include "utils.h"
 #include "estimations.h"
 
+#include <stdlib.h>
+
 
 float distBetweenPoints(Point& p1, Point& p2){
   // function to get distance between two points
@@ -13,9 +15,11 @@ float distBetweenPoints(Point& p1, Point& p2){
 }
 
 
-void getCellFromPos(Point pos, Point* current_cell) {
-    current_cell->x = int(round(((pos.x - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
-    current_cell->y = int(round(((pos.y - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
+CellPos getCellFromPos(Point& pos) {
+    CellPos current_cell;
+    current_cell.x = int(round(((pos.x - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
+    current_cell.y = int(round(((pos.y - CELL_SIZE/2 - WALL_WIDTH)/(CELL_SIZE + WALL_WIDTH))));
+    return current_cell;
 }
 
 
@@ -75,4 +79,79 @@ void init_corners(CornerEst corners[LABYRINTH_WIDTH+1][LABYRINTH_HEIGHT+1]) {
         }
     }
 }
+
+
+Queue* createQueue() {
+    Queue* queue = (Queue*)malloc(sizeof(Queue));
+    queue->front = NULL;
+    queue->rear = NULL;
+    return queue;
+}
+
+int isEmpty(Queue* queue) {
+    return (queue->front == NULL);
+}
+
+void push_queue(Queue* queue, Node* parent, CellPos data) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->data = data;
+    newNode->next = NULL;
+    newNode->parent = parent;
+
+    if (isEmpty(queue)) {
+        queue->front = newNode;
+        queue->rear = newNode;
+    } else {
+        queue->rear->next = newNode;
+        queue->rear = newNode;
+    }
+}
+
+void pop_queue(Queue* queue) {
+    if (isEmpty(queue)) {
+        printf("Queue is empty!\n");
+    }
+
+    Node* temp = queue->front;
+    // CellPos data = temp->data;
+    queue->front = queue->front->next;
+
+    if (queue->front == NULL) {
+        queue->rear = NULL;
+    }
+
+    free(temp);
+}
+
+void swap(Queue* queue1, Queue* queue2) {
+    Queue tempQueue = *queue1;
+    *queue1 = *queue2;
+    *queue2 = tempQueue;
+}
+
+void destroyQueue(Queue* queue) {
+    while (!isEmpty(queue)) {
+        pop_queue(queue);
+    }
+    free(queue);
+}
+
+
+/*
+int main() {
+    Queue* queue = createQueue();
+
+    enqueue(queue, 10);
+    enqueue(queue, 20);
+    enqueue(queue, 30);
+
+    printf("%d\n", dequeue(queue));
+    printf("%d\n", dequeue(queue));
+    printf("%d\n", dequeue(queue));
+
+    destroyQueue(queue);
+
+    return 0;
+}
+*/
 

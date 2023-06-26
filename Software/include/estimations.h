@@ -4,11 +4,6 @@
 #include "defs.h"
 
 typedef struct {
-    float x;
-    float y;
-} Point;
-
-typedef struct {
     Point p1;
     Point p2;
     Point p3;

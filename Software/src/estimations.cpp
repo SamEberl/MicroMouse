@@ -130,8 +130,8 @@ void compareDistanceToWall(SensorEst& sensor, CellEst labyrinth[LABYRINTH_WIDTH]
     Point wall_start;
     Point wall_end;
 
-    Point current_cell;
-    getCellFromPos(sensor.sens_pos, current_cell);
+    CellPos current_cell;
+    current_cell = getCellFromPos(sensor.sens_pos);
 
     for (int i = 0; i < LABYRINTH_WIDTH; i += 1) {
         for (int j = 0; j < LABYRINTH_HEIGHT; j += 1) {
