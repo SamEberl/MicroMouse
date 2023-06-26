@@ -1,9 +1,6 @@
 #include <cmath>
 #include <stdio.h>
 #include <iostream>
-#include <queue>
-#include <stack>
-#include <map>
 #include "defs.h"
 #include "utils.h"
 #include "estimations.h"

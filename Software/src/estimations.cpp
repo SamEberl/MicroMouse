@@ -1,6 +1,6 @@
-#include <cmath>
 #include <stdio.h>
 #include <iostream>
+#include <math.h>
 #include "estimations.h"
 #include "defs.h"
 #include "utils.h"
