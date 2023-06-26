@@ -106,7 +106,7 @@ CellPos getPath(Planner& planner, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_H
             // Construct the path from the end to the begin
             if ((current.data.x != begin.x) || (current.data.y != begin.y)) {
                 waypoint = current;
-                planner.next_points.push(current);
+                push_stack(planner.next_points, current.data);
                 current = *current.parent;
                 cur_parent = *current.parent;
                 while ((current.data.x != begin.x) || (current.data.y != begin.y)) {
@@ -114,14 +114,16 @@ CellPos getPath(Planner& planner, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_H
                         current = *current.parent;
                     } else {
                         waypoint = current;
-                        planner.next_points.push(current);
+                        push_stack(planner.next_points, current.data);
                         current = *current.parent;
                     }
                 }
             } else {
-                planner.next_points.push(current);
+                push_stack(planner.next_points, current.data);
             }
             planner.point_reached = false;
+            destroyQueue(q_next);
+            destroyQueue(q);
             return driving_to;
         }
         // Check the north cell
@@ -167,34 +169,38 @@ CellPos getPath(Planner& planner, CellEst labyrinth[LABYRINTH_WIDTH][LABYRINTH_H
             swap(q, q_next);
         }
     }
+    destroyQueue(q_next);
+    destroyQueue(q);
     return CellPos {-1, -1};
 } 
 
-float calcPathLength(stack<CellPos> path, CellPos start) {
-    int length = 0;
+float calcPathLength(Stack* path, CellPos start) {
+    float length = 0.0;
     CellPos previous = start;
     CellPos current;
-    while (!path.empty()) {
-        current = path.top();
-        length += abs(previous.x - current.x) + abs(previous.y - current.y);
+    while (!isEmpty(path)) {
+        current = path->top->data;
+        length += fabsf(previous.x - current.x) + fabsf(previous.y - current.y);
         previous = current;
-        path.pop();
+        pop_stack(path);
     }
-    length += previous.x - current.x + previous.y - current.y;
+    length += fabsf(previous.x - current.x) + fabsf(previous.y - current.y);
     return length;
 }
 
-void printPath(stack<CellPos> path) {
+
+void printPath(Stack* path) {
     // Loop until the path is empty
-    while (!path.empty()) {
+    while (!isEmpty(path)) {
         // Get the next cell from the path
-        CellPos current = path.top();
-        path.pop();
+        CellPos current = path->top->data;
+        pop_stack(path);
         // Print the coordinates of the cell
-        cout << "(" << current.x << ", " << current.y << ")" << endl;
+        printf("(%d, %d)\n", current.x, current.y);
     }
-    cout << "________________" << endl;
+    printf("________________\n");
 }
+
 
 
 Point drive_to(Planner& planner, PIDController PID, CellPos next, RobotEst mouseEst, CellEst labyrinthEst[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]){
@@ -202,9 +208,12 @@ Point drive_to(Planner& planner, PIDController PID, CellPos next, RobotEst mouse
     float target_tolerance = 25;
     float dir_tolerance = M_PI/60; //3 degrees to either side
 
+    int next_x = planner.next_points->top->data.x;
+    int next_y = planner.next_points->top->data.y;
+
     Point target = {-1.0, -1.0};
-    target.x = float(planner.next_points.top().x) * (CELL_SIZE + WALL_WIDTH) + CELL_SIZE/2 + WALL_WIDTH;
-    target.y = float(planner.next_points.top().y) * (CELL_SIZE + WALL_WIDTH) + CELL_SIZE/2 + WALL_WIDTH;
+    target.x = float(next_x) * (CELL_SIZE + WALL_WIDTH) + CELL_SIZE/2 + WALL_WIDTH;
+    target.y = float(next_y) * (CELL_SIZE + WALL_WIDTH) + CELL_SIZE/2 + WALL_WIDTH;
 
     float dir_to_target = atan2((target.y-mouseEst.rob_pos.y),(target.x-mouseEst.rob_pos.x));
     if (dir_to_target > 0) {
@@ -218,7 +227,7 @@ Point drive_to(Planner& planner, PIDController PID, CellPos next, RobotEst mouse
     }
 
     if (distBetweenPoints(mouseEst.rob_pos, target) < target_tolerance) {
-        labyrinthEst[planner.next_points.top().y][planner.next_points.top().x].is_seen = true;
+        labyrinthEst[next_y][next_x].is_seen = true;
         planner.point_reached = true;
         return Point{0.0, 0.0};
     } else if (abs(mouseEst.rob_dir - dir_to_target) < dir_tolerance) {
@@ -252,7 +261,7 @@ Point drive_to(Planner& planner, PIDController PID, CellPos next, RobotEst mouse
 
 Point update(Planner& planner, PIDController& PID, RobotEst mouseEst, CellEst labyrinthEst[LABYRINTH_WIDTH][LABYRINTH_HEIGHT]) {
     planner.current_cell = getCellFromPos(mouseEst.rob_pos);
-    if (planner.next_points.empty()) {
+    if (isEmpty(planner.next_points)) {
         if (!planner.goal_found) {
             findGoal(planner, labyrinthEst);
         }
@@ -264,10 +273,11 @@ Point update(Planner& planner, PIDController& PID, RobotEst mouseEst, CellEst la
                     getPath(planner, labyrinthEst, planner.current_cell, 'S');
                 }
             } else {
-                stack<CellPos> goal_path;
+                Stack* goal_path = createStack();
                 getPath(planner, labyrinthEst, planner.start_cell, 'G');
                 planner.shortest_path_length = calcPathLength(planner.next_points, planner.start_cell);
                 swap(planner.next_points, goal_path);
+                destroyStack(goal_path);
 
                 CellPos next_unexplored;
                 next_unexplored = getPath(planner, labyrinthEst, planner.current_cell, 'U');
@@ -276,22 +286,23 @@ Point update(Planner& planner, PIDController& PID, RobotEst mouseEst, CellEst la
 
                 if(planner.shortest_path_length <= (unexplored_path_length + manhatten_to_start + 1)){
                     planner.fastest_path_found = true;
-                    stack<CellPos> empty;
+                    Stack* empty = createStack();
                     swap(planner.next_points, empty);
+                    destroyStack(empty);
                 } 
             }
         } else {
             getPath(planner, labyrinthEst, planner.current_cell, 'U');
         }
-        if (!planner.next_points.empty()) {
+        if (!isEmpty(planner.next_points)) {
             printPath(planner.next_points);
         }
     } else {
         if (planner.point_reached){
-            planner.next_points.pop();
+            pop_stack(planner.next_points);
             planner.point_reached = false;
         } else {
-            return drive_to(planner, PID, planner.next_points.top(), mouseEst, labyrinthEst);
+            return drive_to(planner, PID, planner.next_points->top->data, mouseEst, labyrinthEst);
         }
 
     }

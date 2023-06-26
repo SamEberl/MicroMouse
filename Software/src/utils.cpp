@@ -137,21 +137,44 @@ void destroyQueue(Queue* queue) {
 }
 
 
-/*
-int main() {
-    Queue* queue = createQueue();
 
-    enqueue(queue, 10);
-    enqueue(queue, 20);
-    enqueue(queue, 30);
 
-    printf("%d\n", dequeue(queue));
-    printf("%d\n", dequeue(queue));
-    printf("%d\n", dequeue(queue));
-
-    destroyQueue(queue);
-
-    return 0;
+Stack* createStack() {
+    Stack* stack = (Stack*)malloc(sizeof(Stack));
+    stack->top = NULL;
+    return stack;
 }
-*/
 
+int isEmpty(Stack* stack) {
+    return (stack->top == NULL);
+}
+
+void push_stack(Stack* stack, CellPos data) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->data = data;
+    newNode->next = stack->top;
+    stack->top = newNode;
+}
+
+void pop_stack(Stack* stack) {
+    if (isEmpty(stack)) {
+        printf("Stack is empty!\n");
+        return;
+    }
+    Node* temp = stack->top;
+    stack->top = stack->top->next;
+    free(temp);
+}
+
+void swap(Stack* stack1, Stack* stack2) {
+    Stack tempStack = *stack1;
+    *stack1 = *stack2;
+    *stack2 = tempStack;
+}
+
+void destroyStack(Stack* stack) {
+    while (!isEmpty(stack)) {
+        pop_stack(stack);
+    }
+    free(stack);
+}

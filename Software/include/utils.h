@@ -30,12 +30,24 @@ typedef struct Queue {
     Node* rear;
 } Queue;
 
+typedef struct {
+    Node* top;
+} Stack;
+
 Queue* createQueue();
 int isEmpty(Queue* queue);
 void push_queue(Queue* queue, Node* parent, CellPos data);
 void pop_queue(Queue* queue);
 void swap(Queue* queue1, Queue* queue2);
 void destroyQueue(Queue* queue);
+
+
+Stack* createStack();
+int isEmpty(Stack* stack);
+void push_stack(Stack* stack, CellPos data);
+void pop_stack(Stack* stack);
+void swap(Stack* stack1, Stack* stack2);
+void destroyStack(Stack* stack);
 
 
 #endif

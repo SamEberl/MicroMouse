@@ -20,7 +20,7 @@ typedef struct {
   CellPos goal_2;
   CellPos goal_3;
   CellPos goal_4;
-  stack<CellPos> next_points;
+  Stack* next_points = createStack();
   bool goal_found;
   bool fastest_path_found;
   bool point_reached;
